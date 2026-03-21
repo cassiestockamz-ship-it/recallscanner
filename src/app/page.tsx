@@ -2,9 +2,56 @@ import Link from "next/link";
 import VinChecker from "@/components/VinChecker";
 import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
 
+const FAQS = [
+  {
+    q: "What is a vehicle recall?",
+    a: "A vehicle recall is issued when a manufacturer or NHTSA determines that a vehicle, equipment, car seat, or tire creates an unreasonable safety risk or fails to meet minimum safety standards. The manufacturer must fix the problem at no cost to you.",
+  },
+  {
+    q: "Where do I find my VIN?",
+    a: "Your 17-digit VIN can be found on your vehicle registration, insurance card, the driver's side dashboard (visible through the windshield), or on a sticker inside the driver's side door jamb.",
+  },
+  {
+    q: "How much does a recall repair cost?",
+    a: "Nothing. By law, manufacturers must repair recalled vehicles for free, regardless of whether you're the original owner or the vehicle is out of warranty.",
+  },
+  {
+    q: "What should I do if my car has a recall?",
+    a: "Contact your nearest authorized dealership to schedule the recall repair. You don't need an appointment at the dealership where you purchased the vehicle — any authorized dealer for your vehicle's brand can perform the repair.",
+  },
+  {
+    q: "Where does RecallScanner get its data?",
+    a: "All recall data comes directly from the National Highway Traffic Safety Administration (NHTSA), the official U.S. government agency responsible for vehicle safety. Our database is updated daily.",
+  },
+];
+
+const currentYear = new Date().getFullYear();
+
 export default function HomePage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a },
+    })),
+  };
+
+  const webAppJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "RecallScanner",
+    applicationCategory: "UtilityApplication",
+    operatingSystem: "Web",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    description: "Free vehicle recall lookup by VIN. Powered by official NHTSA data.",
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
       {/* Hero */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -73,7 +120,7 @@ export default function HomePage() {
             </div>
             <div>
               <div className="text-3xl font-bold text-brand">29M+</div>
-              <div className="text-slate-500 text-sm mt-1">Vehicles recalled in 2025</div>
+              <div className="text-slate-500 text-sm mt-1">Vehicles recalled in {currentYear - 1}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-brand">100%</div>
@@ -88,28 +135,7 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto px-4">
           <h2 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
           <div className="space-y-6">
-            {[
-              {
-                q: "What is a vehicle recall?",
-                a: "A vehicle recall is issued when a manufacturer or NHTSA determines that a vehicle, equipment, car seat, or tire creates an unreasonable safety risk or fails to meet minimum safety standards. The manufacturer must fix the problem at no cost to you.",
-              },
-              {
-                q: "Where do I find my VIN?",
-                a: "Your 17-digit VIN can be found on your vehicle registration, insurance card, the driver's side dashboard (visible through the windshield), or on a sticker inside the driver's side door jamb.",
-              },
-              {
-                q: "How much does a recall repair cost?",
-                a: "Nothing. By law, manufacturers must repair recalled vehicles for free, regardless of whether you're the original owner or the vehicle is out of warranty.",
-              },
-              {
-                q: "What should I do if my car has a recall?",
-                a: "Contact your nearest authorized dealership to schedule the recall repair. You don't need an appointment at the dealership where you purchased the vehicle — any authorized dealer for your vehicle's brand can perform the repair.",
-              },
-              {
-                q: "Where does RecallScanner get its data?",
-                a: "All recall data comes directly from the National Highway Traffic Safety Administration (NHTSA), the official U.S. government agency responsible for vehicle safety. Our database is updated daily.",
-              },
-            ].map((faq) => (
+            {FAQS.map((faq) => (
               <div key={faq.q} className="bg-white rounded-lg border border-border p-5">
                 <h3 className="font-semibold text-slate-800 mb-2">{faq.q}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>

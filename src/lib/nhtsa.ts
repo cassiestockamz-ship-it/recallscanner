@@ -15,18 +15,18 @@ export interface Recall {
 }
 
 export interface Complaint {
-  ODINumber: string;
-  Make: string;
-  Model: string;
-  ModelYear: string;
-  DateOfIncident: string;
-  DateComplaintFiled: string;
-  Component: string;
-  Summary: string;
-  Crash: boolean;
-  Fire: boolean;
-  NumberOfInjuries: number;
-  NumberOfDeaths: number;
+  odiNumber: string;
+  make: string;
+  model: string;
+  modelYear: string;
+  dateOfIncident: string;
+  dateComplaintFiled: string;
+  components: string;
+  summary: string;
+  crash: boolean;
+  fire: boolean;
+  numberOfInjuries: number;
+  numberOfDeaths: number;
 }
 
 export interface VinDecode {
@@ -69,9 +69,13 @@ export function unslug(slug: string): string {
   return slug.replace(/-/g, " ");
 }
 
+export function nhtsaRecallUrl(campaignNumber: string): string {
+  return `https://www.nhtsa.gov/recalls?nhtsaId=${campaignNumber}`;
+}
+
 export async function getRecallsByVin(vin: string): Promise<Recall[]> {
   const res = await fetch(
-    `${BASE}/recalls/recallsByVehicle?make=&model=&modelYear=&campaignNumber=&vin=${vin}`,
+    `${BASE}/recalls/recallsByVehicle?make=&model=&modelYear=&campaignNumber=&vin=${encodeURIComponent(vin)}`,
     { next: { revalidate: 86400 } }
   );
   if (!res.ok) return [];
@@ -81,13 +85,15 @@ export async function getRecallsByVin(vin: string): Promise<Recall[]> {
 
 export async function decodeVin(vin: string): Promise<VinDecode | null> {
   const res = await fetch(
-    `${BASE}/vehicles/DecodeVinValues/${vin}?format=json`,
+    `${BASE}/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`,
     { next: { revalidate: 86400 } }
   );
   if (!res.ok) return null;
   const data = await res.json();
   const result = data.Results?.[0];
-  if (!result || result.ErrorCode === "0") return result;
+  if (!result) return null;
+  // ErrorCode "0" means success; anything else means decode failed
+  if (result.ErrorCode && result.ErrorCode !== "0") return null;
   return result;
 }
 
@@ -126,7 +132,6 @@ export async function getModelsForMake(make: string): Promise<{ model: string; y
   const results: { model: string; year: string }[] = [];
   const seen = new Set<string>();
 
-  // Fetch models across recent years in parallel
   const fetches = years.map(async (year) => {
     const res = await fetch(
       `${BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
@@ -140,10 +145,11 @@ export async function getModelsForMake(make: string): Promise<{ model: string; y
   const allResults = await Promise.all(fetches);
   for (const yearResults of allResults) {
     for (const r of yearResults) {
-      // Normalize model name — take the base name before parentheses
+      // Normalize: strip parentheses, uppercase for dedup
       const baseModel = r.model.split("(")[0].trim();
-      if (!seen.has(baseModel)) {
-        seen.add(baseModel);
+      const dedupKey = baseModel.toUpperCase();
+      if (!seen.has(dedupKey)) {
+        seen.add(dedupKey);
         results.push({ model: baseModel, year: r.year });
       }
     }
@@ -157,7 +163,6 @@ export async function getRecentRecallsForMake(make: string): Promise<Recall[]> {
   const currentYear = new Date().getFullYear();
   const years = [currentYear, currentYear - 1, currentYear - 2];
 
-  // Get models for recent years
   const modelSets = await Promise.all(
     years.map(async (year) => {
       const res = await fetch(
@@ -170,13 +175,12 @@ export async function getRecentRecallsForMake(make: string): Promise<Recall[]> {
     })
   );
 
-  // Pick up to 5 unique models to fetch recalls for (to avoid too many API calls)
   const seen = new Set<string>();
   const toFetch: { model: string; year: string }[] = [];
   for (const models of modelSets) {
     for (const m of models) {
       const base = m.model.split("(")[0].trim();
-      const key = `${base}-${m.year}`;
+      const key = `${base.toUpperCase()}-${m.year}`;
       if (!seen.has(key) && toFetch.length < 15) {
         seen.add(key);
         toFetch.push({ model: m.model, year: m.year });
@@ -188,7 +192,6 @@ export async function getRecentRecallsForMake(make: string): Promise<Recall[]> {
     toFetch.map((m) => getRecallsByMakeModelYear(make, m.model, m.year))
   );
 
-  // Deduplicate by campaign number
   const campaignSeen = new Set<string>();
   const all: Recall[] = [];
   for (const batch of recalls) {

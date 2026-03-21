@@ -6,6 +6,7 @@ import {
   modelSlug,
   getModelsForMake,
   getRecentRecallsForMake,
+  nhtsaRecallUrl,
 } from "@/lib/nhtsa";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${make} Recalls — All Safety Recalls for ${make} Vehicles`,
     description: `Complete list of ${make} safety recalls from NHTSA. Check if your ${make} has open recalls and find affected models, components, and remedies.`,
+    alternates: { canonical: `https://www.recallscanner.com/recalls/${slug}` },
   };
 }
 
@@ -86,9 +88,16 @@ export default async function MakePage({ params }: Props) {
             {recalls.slice(0, 20).map((r) => (
               <div key={r.NHTSACampaignNumber} className="bg-white border border-border rounded-lg p-5">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xs font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
-                    {r.NHTSACampaignNumber}
-                  </span>
+                  <a
+                    href={nhtsaRecallUrl(r.NHTSACampaignNumber)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono bg-slate-100 text-brand px-2 py-0.5 rounded hover:bg-blue-50 transition-colors"
+                    title="View on NHTSA.gov"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {r.NHTSACampaignNumber} ↗
+                  </a>
                   <span className="text-xs text-slate-400">
                     {r.ReportReceivedDate}
                   </span>
