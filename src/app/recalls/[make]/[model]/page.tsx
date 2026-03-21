@@ -7,6 +7,7 @@ import {
   unslug,
   getRecallsByMakeModelYear,
   getComplaintsByMakeModelYear,
+  getModelsForMake,
 } from "@/lib/nhtsa";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
@@ -35,15 +36,38 @@ export default async function ModelPage({ params }: Props) {
   const make = findMake(makeParam);
   if (!make) notFound();
 
-  // Fetch recalls for this make, then filter to matching model
-  const allRecalls = await getRecallsByMakeModelYear(make);
-  const recalls = allRecalls.filter(
-    (r) => modelSlug(r.Model) === modelParam
+  // Get all models for this make to find the right model name and years
+  const allModels = await getModelsForMake(make);
+  const matchingModels = allModels.filter(
+    (m) => modelSlug(m.model) === modelParam
   );
 
-  if (recalls.length === 0) notFound();
+  if (matchingModels.length === 0) notFound();
 
-  const modelDisplay = recalls[0].Model;
+  const modelDisplay = matchingModels[0].model;
+
+  // Fetch recalls across recent years for this model
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
+
+  const recallBatches = await Promise.all(
+    years.map((year) => getRecallsByMakeModelYear(make, modelDisplay, year))
+  );
+
+  // Deduplicate by campaign number
+  const campaignSeen = new Set<string>();
+  const recalls = recallBatches
+    .flat()
+    .filter((r) => {
+      if (campaignSeen.has(r.NHTSACampaignNumber)) return false;
+      campaignSeen.add(r.NHTSACampaignNumber);
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.ReportReceivedDate).getTime() -
+        new Date(a.ReportReceivedDate).getTime()
+    );
 
   // Group by year
   const yearMap = new Map<string, number>();
@@ -51,24 +75,29 @@ export default async function ModelPage({ params }: Props) {
     const y = r.ModelYear || "Unknown";
     yearMap.set(y, (yearMap.get(y) || 0) + 1);
   }
-  const years = Array.from(yearMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-
-  // Fetch complaints (limited)
-  const complaints = await getComplaintsByMakeModelYear(make, modelDisplay);
-  const recentComplaints = complaints.slice(0, 10);
-
-  // Sort recalls by date
-  const sortedRecalls = [...recalls].sort(
-    (a, b) => new Date(b.ReportReceivedDate).getTime() - new Date(a.ReportReceivedDate).getTime()
+  const yearEntries = Array.from(yearMap.entries()).sort((a, b) =>
+    b[0].localeCompare(a[0])
   );
+
+  // Fetch complaints for one recent year (to keep API calls reasonable)
+  const complaints = await getComplaintsByMakeModelYear(
+    make,
+    modelDisplay,
+    String(currentYear - 1)
+  );
+  const recentComplaints = complaints.slice(0, 10);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       {/* Breadcrumb */}
       <nav className="text-sm text-slate-400 mb-6">
-        <Link href="/recalls" className="hover:text-brand">All Brands</Link>
+        <Link href="/recalls" className="hover:text-brand">
+          All Brands
+        </Link>
         <span className="mx-2">/</span>
-        <Link href={`/recalls/${makeParam}`} className="hover:text-brand">{make}</Link>
+        <Link href={`/recalls/${makeParam}`} className="hover:text-brand">
+          {make}
+        </Link>
         <span className="mx-2">/</span>
         <span className="text-slate-700">{modelDisplay}</span>
       </nav>
@@ -78,8 +107,10 @@ export default async function ModelPage({ params }: Props) {
       </h1>
       <p className="text-slate-500 mb-8">
         {recalls.length} recall campaign{recalls.length !== 1 ? "s" : ""} found
-        across {years.length} model year{years.length !== 1 ? "s" : ""}.
-        {complaints.length > 0 && ` Plus ${complaints.length.toLocaleString()} owner complaints.`}
+        across {yearEntries.length} model year
+        {yearEntries.length !== 1 ? "s" : ""}.
+        {complaints.length > 0 &&
+          ` Plus ${complaints.length.toLocaleString()} owner complaints.`}
       </p>
 
       {/* VIN checker */}
@@ -91,50 +122,69 @@ export default async function ModelPage({ params }: Props) {
       </div>
 
       {/* Year breakdown */}
-      <h2 className="text-xl font-bold mb-3">Recalls by Model Year</h2>
-      <div className="flex flex-wrap gap-2 mb-10">
-        {years.map(([year, count]) => (
-          <div
-            key={year}
-            className="bg-white border border-border rounded-lg px-4 py-2 text-center"
-          >
-            <div className="font-semibold text-slate-800">{year}</div>
-            <div className="text-xs text-slate-400">{count} recall{count !== 1 ? "s" : ""}</div>
+      {yearEntries.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold mb-3">Recalls by Model Year</h2>
+          <div className="flex flex-wrap gap-2 mb-10">
+            {yearEntries.map(([year, count]) => (
+              <div
+                key={year}
+                className="bg-white border border-border rounded-lg px-4 py-2 text-center"
+              >
+                <div className="font-semibold text-slate-800">{year}</div>
+                <div className="text-xs text-slate-400">
+                  {count} recall{count !== 1 ? "s" : ""}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {/* All recalls */}
-      <h2 className="text-xl font-bold mb-4">All Recalls</h2>
-      <div className="space-y-4 mb-12">
-        {sortedRecalls.map((r) => (
-          <div key={r.NHTSACampaignNumber} className="bg-white border border-border rounded-lg p-5">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-xs font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
-                {r.NHTSACampaignNumber}
-              </span>
-              <span className="text-xs text-slate-400">{r.ReportReceivedDate}</span>
-              <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
-                {r.ModelYear}
-              </span>
-            </div>
-            <div className="text-sm font-medium text-slate-700 mb-1">{r.Component}</div>
-            <p className="text-sm text-slate-500 leading-relaxed">{r.Summary}</p>
-            {r.Consequence && (
-              <div className="mt-2 text-sm">
-                <span className="font-medium text-danger">Risk:</span>{" "}
-                <span className="text-slate-600">{r.Consequence}</span>
+      {recalls.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold mb-4">All Recalls</h2>
+          <div className="space-y-4 mb-12">
+            {recalls.map((r) => (
+              <div
+                key={r.NHTSACampaignNumber}
+                className="bg-white border border-border rounded-lg p-5"
+              >
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-xs font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
+                    {r.NHTSACampaignNumber}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    {r.ReportReceivedDate}
+                  </span>
+                  <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
+                    {r.ModelYear}
+                  </span>
+                </div>
+                <div className="text-sm font-medium text-slate-700 mb-1">
+                  {r.Component}
+                </div>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  {r.Summary}
+                </p>
+                {r.Consequence && (
+                  <div className="mt-2 text-sm">
+                    <span className="font-medium text-danger">Risk:</span>{" "}
+                    <span className="text-slate-600">{r.Consequence}</span>
+                  </div>
+                )}
+                {r.Remedy && (
+                  <div className="mt-1 text-sm">
+                    <span className="font-medium text-safe">Remedy:</span>{" "}
+                    <span className="text-slate-600">{r.Remedy}</span>
+                  </div>
+                )}
               </div>
-            )}
-            {r.Remedy && (
-              <div className="mt-1 text-sm">
-                <span className="font-medium text-safe">Remedy:</span>{" "}
-                <span className="text-slate-600">{r.Remedy}</span>
-              </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {/* Complaints */}
       {recentComplaints.length > 0 && (
@@ -144,9 +194,14 @@ export default async function ModelPage({ params }: Props) {
           </h2>
           <div className="space-y-4">
             {recentComplaints.map((c, i) => (
-              <div key={c.ODINumber || i} className="bg-white border border-border rounded-lg p-5">
+              <div
+                key={c.ODINumber || i}
+                className="bg-white border border-border rounded-lg p-5"
+              >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xs text-slate-400">{c.DateComplaintFiled}</span>
+                  <span className="text-xs text-slate-400">
+                    {c.DateComplaintFiled}
+                  </span>
                   <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
                     {c.ModelYear} {c.Model}
                   </span>
@@ -161,8 +216,12 @@ export default async function ModelPage({ params }: Props) {
                     </span>
                   )}
                 </div>
-                <div className="text-sm font-medium text-slate-700 mb-1">{c.Component}</div>
-                <p className="text-sm text-slate-500 leading-relaxed">{c.Summary}</p>
+                <div className="text-sm font-medium text-slate-700 mb-1">
+                  {c.Component}
+                </div>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  {c.Summary}
+                </p>
               </div>
             ))}
           </div>

@@ -93,14 +93,11 @@ export async function decodeVin(vin: string): Promise<VinDecode | null> {
 
 export async function getRecallsByMakeModelYear(
   make: string,
-  model?: string,
-  year?: string
+  model: string,
+  year: string
 ): Promise<Recall[]> {
-  const params = new URLSearchParams({ make });
-  if (model) params.set("model", model);
-  if (year) params.set("modelYear", year);
   const res = await fetch(
-    `${BASE}/recalls/recallsByVehicle?${params}`,
+    `${BASE}/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`,
     { next: { revalidate: 86400 } }
   );
   if (!res.ok) return [];
@@ -110,14 +107,11 @@ export async function getRecallsByMakeModelYear(
 
 export async function getComplaintsByMakeModelYear(
   make: string,
-  model?: string,
-  year?: string
+  model: string,
+  year: string
 ): Promise<Complaint[]> {
-  const params = new URLSearchParams({ make });
-  if (model) params.set("model", model);
-  if (year) params.set("modelYear", year);
   const res = await fetch(
-    `${BASE}/complaints/complaintsByVehicle?${params}`,
+    `${BASE}/complaints/complaintsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`,
     { next: { revalidate: 86400 } }
   );
   if (!res.ok) return [];
@@ -125,11 +119,88 @@ export async function getComplaintsByMakeModelYear(
   return data.results ?? [];
 }
 
-export async function getModelsByMake(make: string): Promise<string[]> {
-  const recalls = await getRecallsByMakeModelYear(make);
-  const models = new Set<string>();
-  for (const r of recalls) {
-    if (r.Model) models.add(r.Model);
+// Get models with recalls for a make across recent years
+export async function getModelsForMake(make: string): Promise<{ model: string; year: string }[]> {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+  const results: { model: string; year: string }[] = [];
+  const seen = new Set<string>();
+
+  // Fetch models across recent years in parallel
+  const fetches = years.map(async (year) => {
+    const res = await fetch(
+      `${BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
+      { next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results ?? []).map((r: { model: string }) => ({ model: r.model, year: String(year) }));
+  });
+
+  const allResults = await Promise.all(fetches);
+  for (const yearResults of allResults) {
+    for (const r of yearResults) {
+      // Normalize model name — take the base name before parentheses
+      const baseModel = r.model.split("(")[0].trim();
+      if (!seen.has(baseModel)) {
+        seen.add(baseModel);
+        results.push({ model: baseModel, year: r.year });
+      }
+    }
   }
-  return Array.from(models).sort();
+
+  return results.sort((a, b) => a.model.localeCompare(b.model));
+}
+
+// Get recalls for a make across recent years (for brand page)
+export async function getRecentRecallsForMake(make: string): Promise<Recall[]> {
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear, currentYear - 1, currentYear - 2];
+
+  // Get models for recent years
+  const modelSets = await Promise.all(
+    years.map(async (year) => {
+      const res = await fetch(
+        `${BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
+        { next: { revalidate: 86400 } }
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.results ?? []).map((r: { model: string }) => ({ model: r.model, year: String(year) }));
+    })
+  );
+
+  // Pick up to 5 unique models to fetch recalls for (to avoid too many API calls)
+  const seen = new Set<string>();
+  const toFetch: { model: string; year: string }[] = [];
+  for (const models of modelSets) {
+    for (const m of models) {
+      const base = m.model.split("(")[0].trim();
+      const key = `${base}-${m.year}`;
+      if (!seen.has(key) && toFetch.length < 15) {
+        seen.add(key);
+        toFetch.push({ model: m.model, year: m.year });
+      }
+    }
+  }
+
+  const recalls = await Promise.all(
+    toFetch.map((m) => getRecallsByMakeModelYear(make, m.model, m.year))
+  );
+
+  // Deduplicate by campaign number
+  const campaignSeen = new Set<string>();
+  const all: Recall[] = [];
+  for (const batch of recalls) {
+    for (const r of batch) {
+      if (!campaignSeen.has(r.NHTSACampaignNumber)) {
+        campaignSeen.add(r.NHTSACampaignNumber);
+        all.push(r);
+      }
+    }
+  }
+
+  return all.sort(
+    (a, b) => new Date(b.ReportReceivedDate).getTime() - new Date(a.ReportReceivedDate).getTime()
+  );
 }
