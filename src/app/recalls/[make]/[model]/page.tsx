@@ -13,6 +13,8 @@ import {
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import RecallList from "@/components/RecallList";
+import EmailCapture from "@/components/EmailCapture";
+import AdSlot from "@/components/AdSlot";
 
 interface Props {
   params: Promise<{ make: string; model: string }>;
@@ -131,6 +133,34 @@ export default async function ModelPage({ params }: Props) {
         make={make}
         modelDisplay={modelDisplay}
       />
+
+      <AdSlot position="after-results" className="my-8" />
+
+      {/* Email capture */}
+      <div className="my-10">
+        <EmailCapture vehicleName={`${make} ${modelDisplay}`} variant="banner" />
+      </div>
+
+      {/* Related models cross-links */}
+      {allModels.length > 1 && (
+        <div className="mt-8 pt-8 border-t border-border">
+          <h2 className="text-lg font-bold mb-4">Other {make} Models</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {allModels
+              .filter((m) => modelSlug(m.model) !== modelParam)
+              .slice(0, 8)
+              .map((m) => (
+                <Link
+                  key={m.model}
+                  href={`/recalls/${makeParam}/${modelSlug(m.model)}`}
+                  className="bg-white border border-border rounded-lg p-3 text-center text-sm font-medium text-slate-600 hover:border-brand hover:text-brand transition-colors"
+                >
+                  {make} {m.model}
+                </Link>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

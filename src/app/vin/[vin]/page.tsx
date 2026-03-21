@@ -2,6 +2,8 @@ import Link from "next/link";
 import { decodeVin, getRecallsByVin, makeSlug, modelSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
+import EmailCapture from "@/components/EmailCapture";
+import AdSlot from "@/components/AdSlot";
 
 interface Props {
   params: Promise<{ vin: string }>;
@@ -193,6 +195,38 @@ export default async function VinPage({ params }: Props) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Clean report — next steps for no-recall vehicles */}
+      {vinRecognized && !hasRecalls && (
+        <div className="bg-white border border-border rounded-lg p-6 mb-8">
+          <h2 className="font-semibold text-lg mb-3">Your Vehicle Is Clear — What&apos;s Next?</h2>
+          <ul className="text-sm text-slate-500 space-y-2 mb-4">
+            <li>Keep up with regular maintenance per your owner&apos;s manual</li>
+            <li>
+              <a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">
+                Sign up for NHTSA recall alerts
+              </a>{" "}
+              to be notified if a recall is issued in the future
+            </li>
+            <li>
+              <Link href={`/recalls/${makeSlug(decoded!.Make)}${decoded!.Model ? `/${modelSlug(decoded!.Model)}` : ""}`} className="text-brand hover:underline">
+                View historical recalls for {decoded!.Make} {decoded!.Model}
+              </Link>{" "}
+              to see past issues with this model
+            </li>
+            <li>Check back periodically — new recalls are added daily</li>
+          </ul>
+        </div>
+      )}
+
+      <AdSlot position="after-results" className="mb-8" />
+
+      {/* Email capture */}
+      {vinRecognized && (
+        <div className="mb-8">
+          <EmailCapture vehicleName={vehicleName || undefined} variant="banner" />
         </div>
       )}
 

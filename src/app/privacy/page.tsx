@@ -53,7 +53,10 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-slate-800 mb-2">Contact</h2>
           <p>
-            If you have questions about this privacy policy, please contact us through our website.
+            If you have questions about this privacy policy, contact us at{" "}
+            <a href="mailto:hello@recallscanner.com" className="text-brand hover:underline">
+              hello@recallscanner.com
+            </a>
           </p>
         </section>
       </div>

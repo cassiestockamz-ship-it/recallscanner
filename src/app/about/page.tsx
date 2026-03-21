@@ -41,6 +41,13 @@ export default function AboutPage() {
           <li>If your vehicle has an open recall, contact your nearest authorized dealership to schedule the repair.</li>
           <li>Data is refreshed daily, but there may be a short delay between when NHTSA publishes a new recall and when it appears here.</li>
         </ul>
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">Contact</h2>
+        <p>
+          Questions or feedback? Reach us at{" "}
+          <a href="mailto:hello@recallscanner.com" className="text-brand hover:underline">
+            hello@recallscanner.com
+          </a>
+        </p>
       </div>
 
       <div className="mt-10 pt-6 border-t border-border">

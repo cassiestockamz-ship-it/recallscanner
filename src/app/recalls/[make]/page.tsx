@@ -10,6 +10,9 @@ import {
 } from "@/lib/nhtsa";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
+import SearchFilter from "@/components/SearchFilter";
+import EmailCapture from "@/components/EmailCapture";
+import AdSlot from "@/components/AdSlot";
 
 interface Props {
   params: Promise<{ make: string }>;
@@ -30,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 86400; // Re-fetch daily
+export const revalidate = 86400;
 
 export default async function MakePage({ params }: Props) {
   const { make: slug } = await params;
@@ -41,6 +44,14 @@ export default async function MakePage({ params }: Props) {
     getModelsForMake(make),
     getRecentRecallsForMake(make),
   ]);
+
+  const modelItems = models.map(({ model }) => ({
+    label: model,
+    href: `/recalls/${slug}/${modelSlug(model)}`,
+  }));
+
+  // Other popular brands for cross-linking
+  const otherBrands = POPULAR_MAKES.filter((m) => m !== make).slice(0, 8);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -63,28 +74,24 @@ export default async function MakePage({ params }: Props) {
         <VinChecker />
       </div>
 
-      {/* Models grid */}
+      {/* Models grid with search */}
       <h2 className="text-2xl font-bold mb-4">{make} Models with Recalls</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-12">
-        {models.map(({ model }) => (
-          <Link
-            key={model}
-            href={`/recalls/${slug}/${modelSlug(model)}`}
-            className="bg-white border border-border rounded-lg p-4 hover:border-brand transition-colors group"
-          >
-            <div className="font-medium text-slate-800 group-hover:text-brand transition-colors">
-              {model}
-            </div>
-            <div className="text-xs text-slate-400 mt-1">View recalls &rarr;</div>
-          </Link>
-        ))}
+      <SearchFilter items={modelItems} placeholder={`Search ${make} models...`} />
+
+      <div className="my-10">
+        <AdSlot position="between-results" />
+      </div>
+
+      {/* Email capture */}
+      <div className="mb-10">
+        <EmailCapture vehicleName={`${make} vehicles`} variant="banner" />
       </div>
 
       {/* Recent recalls */}
       {recalls.length > 0 && (
         <>
           <h2 className="text-2xl font-bold mb-4">Recent {make} Recalls</h2>
-          <div className="space-y-4">
+          <div className="space-y-4 mb-12">
             {recalls.slice(0, 20).map((r) => (
               <div key={r.NHTSACampaignNumber} className="bg-white border border-border rounded-lg p-5">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -94,13 +101,10 @@ export default async function MakePage({ params }: Props) {
                     rel="noopener noreferrer"
                     className="text-xs font-mono bg-slate-100 text-brand px-2 py-0.5 rounded hover:bg-blue-50 transition-colors"
                     title="View on NHTSA.gov"
-                    onClick={(e) => e.stopPropagation()}
                   >
                     {r.NHTSACampaignNumber} ↗
                   </a>
-                  <span className="text-xs text-slate-400">
-                    {r.ReportReceivedDate}
-                  </span>
+                  <span className="text-xs text-slate-400">{r.ReportReceivedDate}</span>
                   <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
                     {r.ModelYear} {r.Model}
                   </span>
@@ -124,6 +128,24 @@ export default async function MakePage({ params }: Props) {
           </div>
         </>
       )}
+
+      <AdSlot position="after-results" />
+
+      {/* Cross-links to other brands */}
+      <div className="mt-12 pt-8 border-t border-border">
+        <h2 className="text-lg font-bold mb-4">Other Popular Brands</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {otherBrands.map((m) => (
+            <Link
+              key={m}
+              href={`/recalls/${makeSlug(m)}`}
+              className="bg-white border border-border rounded-lg p-3 text-center text-sm font-medium text-slate-600 hover:border-brand hover:text-brand transition-colors"
+            >
+              {m} Recalls
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -25,6 +25,7 @@ export default function Footer() {
             <div className="flex flex-col gap-1">
               <Link href="/vin" className="hover:text-brand transition-colors">VIN Recall Check</Link>
               <Link href="/recalls" className="hover:text-brand transition-colors">Browse All Brands</Link>
+              <Link href="/most-recalled" className="hover:text-brand transition-colors">Most Recalled</Link>
               <Link href="/about" className="hover:text-brand transition-colors">About</Link>
               <Link href="/privacy" className="hover:text-brand transition-colors">Privacy Policy</Link>
             </div>
