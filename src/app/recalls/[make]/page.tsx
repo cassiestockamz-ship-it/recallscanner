@@ -28,9 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  return POPULAR_MAKES.map((m) => ({ make: makeSlug(m) }));
-}
+export const revalidate = 86400; // Re-fetch daily
 
 export default async function MakePage({ params }: Props) {
   const { make: slug } = await params;
