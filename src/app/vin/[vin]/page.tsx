@@ -27,10 +27,12 @@ export default async function VinPage({ params }: Props) {
   const vinUpper = vin.toUpperCase();
   const validFormat = isValidVinFormat(vinUpper);
 
-  const [decoded, recalls] = validFormat
+  const [decoded, recallResult] = validFormat
     ? await Promise.all([decodeVin(vinUpper), getRecallsByVin(vinUpper)])
-    : [null, []];
+    : [null, { recalls: [], apiError: false }];
 
+  const recalls = recallResult.recalls;
+  const apiError = recallResult.apiError;
   const hasRecalls = recalls.length > 0;
   const vinRecognized = decoded && decoded.Make;
   const vehicleName = vinRecognized
@@ -120,8 +122,26 @@ export default async function VinPage({ params }: Props) {
         </div>
       )}
 
-      {/* Recall status banner — only show if VIN was recognized */}
-      {vinRecognized && (
+      {/* API error warning */}
+      {apiError && validFormat && (
+        <div className="rounded-lg p-6 mb-8 bg-warning-light border border-yellow-200">
+          <div className="flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-warning">
+              <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <div className="font-bold text-lg text-warning">Unable to Check Recalls</div>
+              <div className="text-sm text-yellow-800">
+                The NHTSA recall database is temporarily unavailable. This does <strong>not</strong> mean your vehicle has no recalls — we simply could not reach the database. Please try again in a few minutes or check directly at{" "}
+                <a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener noreferrer" className="underline font-medium">nhtsa.gov/recalls</a>.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recall status banner — only show if VIN was recognized and no API error */}
+      {vinRecognized && !apiError && (
         <div
           className={`rounded-lg p-6 mb-8 ${
             hasRecalls
@@ -229,6 +249,20 @@ export default async function VinPage({ params }: Props) {
           <EmailCapture vehicleName={vehicleName || undefined} variant="banner" />
         </div>
       )}
+
+      {/* Related recalls cross-links */}
+      <div className="mb-8 text-center text-sm text-slate-500">
+        <span className="font-medium text-slate-700">Browse more recalls:</span>{" "}
+        <Link href="/recalls/ford" className="text-brand hover:underline">Ford</Link>
+        {" · "}
+        <Link href="/recalls/toyota" className="text-brand hover:underline">Toyota</Link>
+        {" · "}
+        <Link href="/recalls/honda" className="text-brand hover:underline">Honda</Link>
+        {" · "}
+        <Link href="/recalls/chevrolet" className="text-brand hover:underline">Chevrolet</Link>
+        {" · "}
+        <Link href="/recalls" className="text-brand hover:underline">See all brands</Link>
+      </div>
 
       {/* Check another */}
       <div className="bg-surface rounded-lg p-6">

@@ -52,6 +52,26 @@ export default function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "RecallScanner",
+        "url": "https://recallscanner.com",
+        "description": "Free vehicle recall check by VIN. Search the official NHTSA database for open safety recalls.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://recallscanner.com/vin/{vin}"
+          },
+          "query-input": "required name=vin"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "RecallScanner",
+          "url": "https://recallscanner.com/about"
+        }
+      })}} />
       {/* Hero */}
       <section className="bg-gradient-to-b from-blue-50 to-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">

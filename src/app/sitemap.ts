@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://www.recallscanner.com";
-  const now = new Date().toISOString();
+  const now = "2026-03-22T00:00:00.000Z";
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: base, lastModified: now, changeFrequency: "daily", priority: 1.0 },

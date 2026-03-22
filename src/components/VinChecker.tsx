@@ -34,6 +34,7 @@ export default function VinChecker() {
             setError("");
           }}
           placeholder="Enter your 17-digit VIN"
+          aria-label="Vehicle Identification Number (VIN)"
           maxLength={17}
           className="flex-1 px-4 py-3 rounded-lg border border-slate-300 text-lg font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand placeholder:text-slate-400 placeholder:font-sans placeholder:tracking-normal"
         />

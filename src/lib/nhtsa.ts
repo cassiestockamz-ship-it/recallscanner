@@ -73,14 +73,18 @@ export function nhtsaRecallUrl(campaignNumber: string): string {
   return `https://www.nhtsa.gov/recalls?nhtsaId=${campaignNumber}`;
 }
 
-export async function getRecallsByVin(vin: string): Promise<Recall[]> {
-  const res = await fetch(
-    `${BASE}/recalls/recallsByVehicle?make=&model=&modelYear=&campaignNumber=&vin=${encodeURIComponent(vin)}`,
-    { next: { revalidate: 86400 } }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.results ?? [];
+export async function getRecallsByVin(vin: string): Promise<{ recalls: Recall[]; apiError: boolean }> {
+  try {
+    const res = await fetch(
+      `${BASE}/recalls/recallsByVehicle?make=&model=&modelYear=&campaignNumber=&vin=${encodeURIComponent(vin)}`,
+      { next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return { recalls: [], apiError: true };
+    const data = await res.json();
+    return { recalls: data.results ?? [], apiError: false };
+  } catch {
+    return { recalls: [], apiError: true };
+  }
 }
 
 export async function decodeVin(vin: string): Promise<VinDecode | null> {
