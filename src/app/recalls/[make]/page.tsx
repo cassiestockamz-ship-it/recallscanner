@@ -35,6 +35,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const revalidate = 86400;
 
+function getBrandFAQs(make: string) {
+  return [
+    {
+      q: `How do I check if my ${make} has a recall?`,
+      a: `Enter your 17-digit VIN in the search tool above. RecallScanner checks the official NHTSA database and instantly shows any open recalls for your specific ${make} vehicle, including the affected component, risk description, and available remedy.`,
+    },
+    {
+      q: `Are ${make} recall repairs free?`,
+      a: `Yes. By federal law, manufacturers must fix recalled vehicles at no cost to the owner, regardless of whether you bought the vehicle new or used, and even if it's out of warranty. Contact any authorized ${make} dealership to schedule the repair.`,
+    },
+    {
+      q: `How often are ${make} recalls updated?`,
+      a: `RecallScanner pulls data directly from the National Highway Traffic Safety Administration (NHTSA). Our database refreshes daily, so new ${make} recalls typically appear within 24 hours of being issued by NHTSA.`,
+    },
+    {
+      q: `What should I do if my ${make} has an open recall?`,
+      a: `Contact your nearest authorized ${make} dealership and provide your VIN. You don't need to visit the dealership where you purchased the vehicle — any authorized ${make} dealer can perform the recall repair for free. Some recalls may require parts to be ordered, so call ahead.`,
+    },
+    {
+      q: `Can I check a used ${make} for recalls before buying?`,
+      a: `Absolutely. Enter the vehicle's VIN in the checker above to see all past and open recalls. This is an important step when buying a used ${make}, as previous owners may not have completed all recall repairs. Unresolved recalls can affect both safety and resale value.`,
+    },
+  ];
+}
+
 export default async function MakePage({ params }: Props) {
   const { make: slug } = await params;
   const make = findMake(slug);
@@ -53,8 +78,23 @@ export default async function MakePage({ params }: Props) {
   // Other popular brands for cross-linking
   const otherBrands = POPULAR_MAKES.filter((m) => m !== make).slice(0, 8);
 
+  const brandFaqs = getBrandFAQs(make);
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: brandFaqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a },
+    })),
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="text-sm text-slate-400 mb-6">
         <Link href="/recalls" className="hover:text-brand">All Brands</Link>
@@ -130,6 +170,19 @@ export default async function MakePage({ params }: Props) {
       )}
 
       <AdSlot position="after-results" />
+
+      {/* FAQ */}
+      <div className="mt-12 pt-8 border-t border-border">
+        <h2 className="text-2xl font-bold mb-4">{make} Recall FAQ</h2>
+        <div className="space-y-4">
+          {brandFaqs.map((faq) => (
+            <div key={faq.q} className="bg-white rounded-lg border border-border p-5">
+              <h3 className="font-semibold text-slate-800 mb-2">{faq.q}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Cross-links to other brands */}
       <div className="mt-12 pt-8 border-t border-border">
