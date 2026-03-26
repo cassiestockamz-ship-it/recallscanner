@@ -1,15 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  POPULAR_MAKES,
-  makeSlug,
-  modelSlug,
-  unslug,
-  getRecallsByMakeModelYear,
-  getComplaintsByMakeModelYear,
-  getModelsForMake,
-  nhtsaRecallUrl,
-} from "@/lib/nhtsa";
+import { POPULAR_MAKES, makeSlug, unslug } from "@/lib/nhtsa";
+import { getModelsForMake, getRecallsForModel, getComplaintsForModel } from "@/lib/db";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import RecallList from "@/components/RecallList";
@@ -36,51 +28,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 86400;
+export const revalidate = 3600;
 
 export default async function ModelPage({ params }: Props) {
   const { make: makeParam, model: modelParam } = await params;
   const make = findMake(makeParam);
   if (!make) notFound();
 
-  const allModels = await getModelsForMake(make);
-  const matchingModels = allModels.filter(
-    (m) => modelSlug(m.model) === modelParam
-  );
+  const allModels = await getModelsForMake(makeParam);
+  const matchingModel = allModels.find((m) => m.model_slug === modelParam);
 
-  if (matchingModels.length === 0) notFound();
+  if (!matchingModel) notFound();
 
-  const modelDisplay = matchingModels[0].model;
+  const modelDisplay = matchingModel.model;
 
-  // Fetch recalls across recent years
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
-
-  const recallBatches = await Promise.all(
-    years.map((year) => getRecallsByMakeModelYear(make, modelDisplay, year))
-  );
-
-  // Deduplicate by campaign number
-  const campaignSeen = new Set<string>();
-  const recalls = recallBatches
-    .flat()
-    .filter((r) => {
-      if (campaignSeen.has(r.NHTSACampaignNumber)) return false;
-      campaignSeen.add(r.NHTSACampaignNumber);
-      return true;
-    })
-    .sort(
-      (a, b) =>
-        new Date(b.ReportReceivedDate).getTime() -
-        new Date(a.ReportReceivedDate).getTime()
-    );
-
-  // Fetch complaints across multiple recent years
-  const complaintYears = [String(currentYear), String(currentYear - 1), String(currentYear - 2)];
-  const complaintBatches = await Promise.all(
-    complaintYears.map((y) => getComplaintsByMakeModelYear(make, modelDisplay, y))
-  );
-  const complaints = complaintBatches.flat();
+  // Single Supabase query each -- no more 10+ NHTSA API calls
+  const [recalls, complaints] = await Promise.all([
+    getRecallsForModel(makeParam, modelParam),
+    getComplaintsForModel(makeParam, modelParam),
+  ]);
 
   // JSON-LD structured data
   const jsonLd = {
@@ -147,12 +113,12 @@ export default async function ModelPage({ params }: Props) {
           <h2 className="text-lg font-bold mb-4">Other {make} Models</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {allModels
-              .filter((m) => modelSlug(m.model) !== modelParam)
+              .filter((m) => m.model_slug !== modelParam)
               .slice(0, 8)
               .map((m) => (
                 <Link
                   key={m.model}
-                  href={`/recalls/${makeParam}/${modelSlug(m.model)}`}
+                  href={`/recalls/${makeParam}/${m.model_slug}`}
                   className="bg-white border border-border rounded-lg p-3 text-center text-sm font-medium text-slate-600 hover:border-brand hover:text-brand transition-colors"
                 >
                   {make} {m.model}

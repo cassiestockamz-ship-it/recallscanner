@@ -1,9 +1,10 @@
-import { POPULAR_MAKES, makeSlug, modelSlug, getModelsForMake } from "@/lib/nhtsa";
+import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
+import { getAllModels } from "@/lib/db";
 import type { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://www.recallscanner.com";
-  const now = "2026-03-22T00:00:00.000Z";
+  const now = new Date().toISOString();
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: base, lastModified: now, changeFrequency: "daily", priority: 1.0 },
@@ -21,25 +22,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Fetch model pages for top brands (limit to avoid too many API calls at build)
-  const topBrands = ["Ford", "Toyota", "Honda", "Chevrolet", "Hyundai", "Kia", "Nissan", "Jeep", "BMW", "Tesla", "Subaru", "GMC"];
-  const modelPages: MetadataRoute.Sitemap = [];
-
-  for (const brand of topBrands) {
-    try {
-      const models = await getModelsForMake(brand);
-      for (const m of models.slice(0, 20)) {
-        modelPages.push({
-          url: `${base}/recalls/${makeSlug(brand)}/${modelSlug(m.model)}`,
-          lastModified: now,
-          changeFrequency: "daily" as const,
-          priority: 0.7,
-        });
-      }
-    } catch {
-      // Skip if API fails
-    }
-  }
+  // Single Supabase query for all models -- no NHTSA API calls at build
+  const allModels = await getAllModels();
+  const modelPages: MetadataRoute.Sitemap = allModels.map((m) => ({
+    url: `${base}/recalls/${m.make_slug}/${m.model_slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
 
   return [...staticPages, ...brandPages, ...modelPages];
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { POPULAR_MAKES, makeSlug, getRecentRecallsForMake, nhtsaRecallUrl } from "@/lib/nhtsa";
+import { POPULAR_MAKES, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
+import { getRecentRecallsAll } from "@/lib/db";
 import type { Metadata } from "next";
-import type { Recall } from "@/lib/nhtsa";
 import EmailCapture from "@/components/EmailCapture";
 
 export const metadata: Metadata = {
@@ -11,32 +11,15 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.recallscanner.com/most-recalled" },
 };
 
-export const revalidate = 86400;
+export const revalidate = 3600;
 
 export default async function MostRecalledPage() {
-  // Fetch recent recalls for top brands
-  const topBrands = ["Ford", "Toyota", "Honda", "Chevrolet", "Hyundai", "Kia", "Nissan", "Jeep", "Tesla", "BMW"];
-  const allRecalls: (Recall & { brandSlug: string })[] = [];
-
-  const results = await Promise.all(
-    topBrands.map(async (brand) => {
-      const recalls = await getRecentRecallsForMake(brand);
-      return recalls.slice(0, 5).map((r) => ({ ...r, brandSlug: makeSlug(brand) }));
-    })
-  );
-
-  for (const batch of results) {
-    allRecalls.push(...batch);
-  }
-
-  // Sort by date, take most recent 30
-  const recentRecalls = allRecalls
-    .sort((a, b) => new Date(b.ReportReceivedDate).getTime() - new Date(a.ReportReceivedDate).getTime())
-    .slice(0, 30);
+  // Single Supabase query -- no more 10 parallel NHTSA calls
+  const recentRecalls = await getRecentRecallsAll(50);
 
   // Count by make
   const makeCounts = new Map<string, number>();
-  for (const r of allRecalls) {
+  for (const r of recentRecalls) {
     makeCounts.set(r.Make, (makeCounts.get(r.Make) || 0) + 1);
   }
   const topMakes = Array.from(makeCounts.entries())
@@ -72,7 +55,7 @@ export default async function MostRecalledPage() {
       {/* Recent recalls */}
       <h2 className="text-2xl font-bold mb-4">Latest Recalls</h2>
       <div className="space-y-4 mb-12">
-        {recentRecalls.map((r) => (
+        {recentRecalls.slice(0, 30).map((r) => (
           <div key={r.NHTSACampaignNumber} className="bg-white border border-border rounded-lg p-5">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <a
@@ -85,7 +68,7 @@ export default async function MostRecalledPage() {
               </a>
               <span className="text-xs text-slate-400">{r.ReportReceivedDate}</span>
               <Link
-                href={`/recalls/${r.brandSlug}`}
+                href={`/recalls/${makeSlug(r.Make)}`}
                 className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
               >
                 {r.Make}
