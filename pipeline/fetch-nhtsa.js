@@ -243,23 +243,76 @@ async function main() {
     }
   }
 
-  const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+  const elapsedSec = (Date.now() - startTime) / 1000;
+  const elapsed = (elapsedSec / 60).toFixed(1);
   const totalModels = results.reduce((s, r) => s + r.models, 0);
   const totalRecalls = results.reduce((s, r) => s + r.recalls, 0);
-  const totalComplaints = results.reduce((s, r) => s + r.complaints, 0);
   const errors = results.filter((r) => r.error);
 
+  // Get actual DB totals for the summary (includes previously stored data)
+  let dbModels = totalModels, dbRecalls = totalRecalls;
+  try {
+    const { data: mc } = await db.from("nhtsa_models").select("id", { count: "exact", head: true });
+    const { data: rc } = await db.from("nhtsa_recalls").select("id", { count: "exact", head: true });
+    // Supabase returns count in the response headers when using head:true + count:exact
+    // Fallback to our run totals
+  } catch {}
+  try {
+    const { count: mCount } = await db.from("nhtsa_models").select("*", { count: "exact", head: true });
+    const { count: rCount } = await db.from("nhtsa_recalls").select("*", { count: "exact", head: true });
+    if (mCount) dbModels = mCount;
+    if (rCount) dbRecalls = rCount;
+  } catch {}
+
+  const status = errors.length > 0 ? "partial" : "completed";
+
   const summary = [
-    `*NHTSA Pipeline Complete* (${elapsed} min)`,
-    `Models: ${totalModels} | Recalls: ${totalRecalls} | Complaints: ${totalComplaints}`,
-    errors.length > 0 ? `Errors: ${errors.map((e) => e.make).join(", ")}` : "No errors",
+    `*NHTSA Pipeline ${status === "completed" ? "Complete" : "Partial"}* (${elapsed} min)`,
+    `Brands: ${makesToProcess.length} | Models: ${totalModels} new | Recalls: ${totalRecalls} new`,
+    `DB totals: ${dbModels} models, ${dbRecalls} recalls`,
+    errors.length > 0 ? `Errors: ${errors.map((e) => e.make).join(", ")}` : "All brands OK",
   ].join("\n");
 
   console.log(`\n${summary}`);
+
+  // Log to job_runs for Project Dash
+  try {
+    await db.from("job_runs").insert({
+      job_name: "nhtsa-pipeline",
+      status,
+      started_at: new Date(startTime).toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_sec: Math.round(elapsedSec),
+      summary: {
+        brands_processed: makesToProcess.length,
+        models_upserted: totalModels,
+        recalls_upserted: totalRecalls,
+        db_total_models: dbModels,
+        db_total_recalls: dbRecalls,
+        errors: errors.map((e) => ({ make: e.make, error: e.error })),
+      },
+      error_message: errors.length > 0 ? errors.map((e) => `${e.make}: ${e.error}`).join("; ") : null,
+    });
+  } catch (err) {
+    console.error(`Failed to log job run: ${err.message}`);
+  }
+
   await sendTelegram(summary);
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(`Pipeline fatal: ${err}`);
+  // Log failure to job_runs
+  try {
+    await db.from("job_runs").insert({
+      job_name: "nhtsa-pipeline",
+      status: "failed",
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_sec: 0,
+      error_message: String(err),
+    });
+    await sendTelegram(`*NHTSA Pipeline FAILED*\n${err.message}`);
+  } catch {}
   process.exit(1);
 });
