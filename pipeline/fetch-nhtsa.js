@@ -38,8 +38,9 @@ const CURRENT_YEAR = new Date().getFullYear();
 const MODEL_YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
 const COMPLAINT_YEARS = Array.from({ length: 3 }, (_, i) => CURRENT_YEAR - i);
 
-// Rate limiting
-const DELAY_MS = 200;
+// Rate limiting -- NHTSA rate-limits aggressively, especially complaints
+const DELAY_MS = 500;
+const LONG_DELAY_MS = 3000; // after 403s
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── Slug helpers (match Next.js site) ───────────────────────
@@ -58,6 +59,11 @@ async function fetchJson(url) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (resp.status === 403) {
+        console.warn(`  Rate limited (403), backing off ${LONG_DELAY_MS}ms...`);
+        await sleep(LONG_DELAY_MS * (attempt + 1));
+        continue;
+      }
       if (!resp.ok) {
         console.warn(`  HTTP ${resp.status} for ${url}`);
         return null;
@@ -260,11 +266,18 @@ async function processMake(make) {
 
 async function main() {
   const startTime = Date.now();
+
+  // --skip N to resume after N brands (e.g., --skip 5 skips Acura-Cadillac)
+  const skipArg = process.argv.find((a) => a === "--skip");
+  const skipIdx = skipArg ? process.argv.indexOf(skipArg) : -1;
+  const skipCount = skipIdx >= 0 ? parseInt(process.argv[skipIdx + 1]) || 0 : 0;
+  const makesToProcess = POPULAR_MAKES.slice(skipCount);
+
   console.log(`NHTSA Pipeline starting at ${new Date().toISOString()}`);
-  console.log(`Fetching ${POPULAR_MAKES.length} makes, ${MODEL_YEARS.length} years each`);
+  console.log(`Processing ${makesToProcess.length} makes (skipping first ${skipCount}), ${MODEL_YEARS.length} years each`);
 
   const results = [];
-  for (const make of POPULAR_MAKES) {
+  for (const make of makesToProcess) {
     try {
       const result = await processMake(make);
       results.push(result);
