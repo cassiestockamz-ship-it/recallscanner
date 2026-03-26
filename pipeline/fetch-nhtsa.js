@@ -211,53 +211,9 @@ async function processMake(make) {
 
   console.log(`  Stored ${recallCount} recalls`);
 
-  // 4. Fetch complaints for each model (recent 3 years only)
-  let complaintCount = 0;
-  const odiSeen = new Set();
-
-  for (const m of models) {
-    for (const year of COMPLAINT_YEARS) {
-      const complaints = await getComplaintsForMakeModelYear(make, m.model, String(year));
-      const newComplaints = complaints.filter((c) => !odiSeen.has(c.odiNumber));
-
-      for (const c of newComplaints) {
-        odiSeen.add(c.odiNumber);
-      }
-
-      if (newComplaints.length > 0) {
-        const rows = newComplaints.map((c) => ({
-          odi_number: c.odiNumber,
-          make,
-          make_slug: mSlug,
-          model: m.model,
-          model_slug: m.slug,
-          model_year: c.modelYear || String(year),
-          date_incident: c.dateOfIncident || null,
-          date_filed: c.dateComplaintFiled || null,
-          components: c.components || null,
-          summary: c.summary || null,
-          crash: c.crash || false,
-          fire: c.fire || false,
-          injuries: c.numberOfInjuries || 0,
-          deaths: c.numberOfDeaths || 0,
-          updated_at: new Date().toISOString(),
-        }));
-
-        for (let i = 0; i < rows.length; i += 100) {
-          const batch = rows.slice(i, i + 100);
-          const { error } = await db
-            .from("nhtsa_complaints")
-            .upsert(batch, { onConflict: "odi_number" });
-          if (error) console.error(`  Complaints upsert error: ${error.message}`);
-        }
-        complaintCount += newComplaints.length;
-      }
-
-      await sleep(DELAY_MS);
-    }
-  }
-
-  console.log(`  Stored ${complaintCount} complaints`);
+  // 4. Complaints -- skipped for now, NHTSA rate-limits this endpoint aggressively
+  // TODO: add slow backfill pass for complaints separately
+  const complaintCount = 0;
 
   return { make, models: models.length, recalls: recallCount, complaints: complaintCount };
 }
