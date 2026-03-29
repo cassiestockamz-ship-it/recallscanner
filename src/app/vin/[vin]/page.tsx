@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { decodeVin, getRecallsByVin, makeSlug, modelSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
+import { decodeVin, getRecallsByVin, makeSlug, modelSlug, nhtsaRecallUrl, formatDate } from "@/lib/nhtsa";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import EmailCapture from "@/components/EmailCapture";
@@ -197,7 +197,7 @@ export default async function VinPage({ params }: Props) {
                 >
                   {r.NHTSACampaignNumber} ↗
                 </a>
-                <span className="text-xs text-slate-400">{r.ReportReceivedDate}</span>
+                <span className="text-xs text-slate-400">{formatDate(r.ReportReceivedDate)}</span>
               </div>
               <div className="text-sm font-medium text-slate-700 mb-1">{r.Component}</div>
               <p className="text-sm text-slate-500 leading-relaxed">{r.Summary}</p>

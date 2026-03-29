@@ -73,6 +73,48 @@ export function nhtsaRecallUrl(campaignNumber: string): string {
   return `https://www.nhtsa.gov/recalls?nhtsaId=${campaignNumber}`;
 }
 
+/**
+ * Format a date string for display. Handles:
+ *  - DD/MM/YYYY (NHTSA recall API / Supabase stored format)
+ *  - MM/DD/YYYY (NHTSA complaints/VIN API format)
+ *  - ISO / any Date-parseable string
+ * Returns "Jan 15, 2024" style output, or the original string if unparseable.
+ */
+export function formatDate(raw: string): string {
+  if (!raw) return "";
+  // DD/MM/YYYY vs MM/DD/YYYY: if first segment > 12, it must be a day
+  const slashParts = raw.split("/");
+  if (slashParts.length === 3) {
+    const [a, b, year] = slashParts;
+    const aNum = parseInt(a, 10);
+    const bNum = parseInt(b, 10);
+    let month: number, day: number;
+    if (aNum > 12) {
+      // DD/MM/YYYY
+      day = aNum;
+      month = bNum;
+    } else if (bNum > 12) {
+      // MM/DD/YYYY
+      month = aNum;
+      day = bNum;
+    } else {
+      // Ambiguous -- assume MM/DD/YYYY (US convention for NHTSA VIN/complaint data)
+      month = aNum;
+      day = bNum;
+    }
+    const d = new Date(parseInt(year, 10), month - 1, day);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    }
+  }
+  // Fallback: try native parse
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+  return raw;
+}
+
 export async function getRecallsByVin(vin: string): Promise<{ recalls: Recall[]; apiError: boolean }> {
   try {
     const res = await fetch(

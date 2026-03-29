@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { POPULAR_MAKES, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
+import { POPULAR_MAKES, makeSlug, nhtsaRecallUrl, formatDate } from "@/lib/nhtsa";
 import { getRecentRecallsAll } from "@/lib/db";
 import type { Metadata } from "next";
 import EmailCapture from "@/components/EmailCapture";
@@ -66,7 +66,7 @@ export default async function MostRecalledPage() {
               >
                 {r.NHTSACampaignNumber} ↗
               </a>
-              <span className="text-xs text-slate-400">{r.ReportReceivedDate}</span>
+              <span className="text-xs text-slate-400">{formatDate(r.ReportReceivedDate)}</span>
               <Link
                 href={`/recalls/${makeSlug(r.Make)}`}
                 className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"

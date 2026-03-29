@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { POPULAR_MAKES, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
+import { POPULAR_MAKES, makeSlug, nhtsaRecallUrl, formatDate } from "@/lib/nhtsa";
 import { getModelsForMake, getRecentRecallsForMake } from "@/lib/db";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
@@ -138,7 +138,7 @@ export default async function MakePage({ params }: Props) {
                   >
                     {r.NHTSACampaignNumber} ↗
                   </a>
-                  <span className="text-xs text-slate-400">{r.ReportReceivedDate}</span>
+                  <span className="text-xs text-slate-400">{formatDate(r.ReportReceivedDate)}</span>
                   <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
                     {r.ModelYear} {r.Model}
                   </span>

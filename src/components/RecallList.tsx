@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Recall, Complaint } from "@/lib/nhtsa";
-import { nhtsaRecallUrl } from "@/lib/nhtsa";
+import { nhtsaRecallUrl, formatDate } from "@/lib/nhtsa";
 
 interface Props {
   recalls: Recall[];
@@ -103,7 +103,7 @@ export default function RecallList({ recalls, complaints, make, modelDisplay }: 
                     {r.NHTSACampaignNumber} ↗
                   </a>
                   <span className="text-xs text-slate-400">
-                    {r.ReportReceivedDate}
+                    {formatDate(r.ReportReceivedDate)}
                   </span>
                   <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
                     {r.ModelYear}
@@ -156,7 +156,7 @@ export default function RecallList({ recalls, complaints, make, modelDisplay }: 
               >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs text-slate-400">
-                    {c.dateComplaintFiled}
+                    {formatDate(c.dateComplaintFiled)}
                   </span>
                   <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
                     {c.modelYear} {c.model}
