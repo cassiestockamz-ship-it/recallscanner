@@ -7,13 +7,15 @@
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 
-async function query<T>(table: string, params: string): Promise<T[]> {
+async function query<T>(table: string, params: string, allRows = false): Promise<T[]> {
   const url = `${SUPABASE_URL}/rest/v1/${table}?${params}`;
+  const headers: Record<string, string> = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+  };
+  if (allRows) headers["Range"] = "0-9999";
   const res = await fetch(url, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-    },
+    headers,
     next: { revalidate: 3600 }, // 1hr ISR — pipeline refreshes daily
   });
   if (!res.ok) {
@@ -155,7 +157,8 @@ export async function getRecentRecallsAll(limit = 30): Promise<Recall[]> {
 export async function getRecallsByYear(): Promise<{ year: string; count: number }[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `select=report_date&order=report_date.desc`
+    `select=report_date&order=report_date.desc`,
+    true
   );
   const yearMap = new Map<string, number>();
   for (const r of rows) {
@@ -172,7 +175,8 @@ export async function getRecallsByYear(): Promise<{ year: string; count: number 
 export async function getRecallsByBrand(): Promise<{ make: string; makeSlug: string; count: number }[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `select=make,make_slug`
+    `select=make,make_slug`,
+    true
   );
   const brandMap = new Map<string, { make: string; makeSlug: string; count: number }>();
   for (const r of rows) {
@@ -187,7 +191,8 @@ export async function getRecallsByBrand(): Promise<{ make: string; makeSlug: str
 export async function getRecallsByComponent(): Promise<{ category: string; count: number }[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `select=component`
+    `select=component`,
+    true
   );
   const catMap = new Map<string, number>();
   for (const r of rows) {
@@ -257,7 +262,8 @@ export async function getModelReliability(makeSlugVal: string, modelSlugVal: str
 export async function getMostRecalledModels(limit = 15): Promise<{ make: string; model: string; makeSlug: string; modelSlug: string; count: number }[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `select=make,make_slug,model,model_slug`
+    `select=make,make_slug,model,model_slug`,
+    true
   );
   const modelMap = new Map<string, { make: string; model: string; makeSlug: string; modelSlug: string; count: number }>();
   for (const r of rows) {
@@ -273,19 +279,14 @@ export async function getMostRecalledModels(limit = 15): Promise<{ make: string;
 
 /** Get recalls for a specific month/year (for blog posts) */
 export async function getRecallsForMonth(month: number, year: number): Promise<Recall[]> {
+  // Use Supabase text filter: report_date contains /MM/YYYY
+  const monthStr = month.toString().padStart(2, "0");
+  const pattern = `/${monthStr}/${year}`;
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes`
+    `report_date=like.*${encodeURIComponent(pattern)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes`
   );
-  const monthStr = month.toString().padStart(2, "0");
-  const filtered = rows.filter(r => {
-    if (!r.report_date) return false;
-    // DD/MM/YYYY format
-    const parts = r.report_date.split("/");
-    if (parts.length !== 3) return false;
-    return parts[1] === monthStr && parts[2] === year.toString();
-  });
-  return filtered.map(toRecall);
+  return rows.map(toRecall);
 }
 
 /** Get all models for sitemap generation */
