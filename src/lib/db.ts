@@ -8,12 +8,12 @@ const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 
 async function query<T>(table: string, params: string, allRows = false): Promise<T[]> {
-  const url = `${SUPABASE_URL}/rest/v1/${table}?${params}`;
+  const fullParams = allRows && !params.includes("limit=") ? `${params}&limit=10000` : params;
+  const url = `${SUPABASE_URL}/rest/v1/${table}?${fullParams}`;
   const headers: Record<string, string> = {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
   };
-  if (allRows) headers["Range"] = "0-9999";
   const res = await fetch(url, {
     headers,
     next: { revalidate: 3600 }, // 1hr ISR — pipeline refreshes daily
