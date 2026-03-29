@@ -1,5 +1,5 @@
 import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
-import { getAllModels } from "@/lib/db";
+import { getAllModels, getDistinctRecallMonths } from "@/lib/db";
 import type { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -13,7 +13,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/most-recalled`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/trends`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/blog`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${base}/blog/march-2026-vehicle-recalls`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
     { url: `${base}/privacy`, lastModified: now, changeFrequency: "monthly", priority: 0.2 },
   ];
@@ -34,5 +33,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...brandPages, ...modelPages];
+  // Auto-discover all months with recall data for blog posts
+  const months = await getDistinctRecallMonths();
+  const blogPages: MetadataRoute.Sitemap = months.map((m) => ({
+    url: `${base}/blog/${m.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...brandPages, ...modelPages, ...blogPages];
 }

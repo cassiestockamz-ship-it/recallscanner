@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getRecallsForMonth } from "@/lib/db";
+import { getRecallsForMonth, getDistinctRecallMonths } from "@/lib/db";
 import { formatDate, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
 import EmailCapture from "@/components/EmailCapture";
 import type { Metadata } from "next";
@@ -9,27 +9,35 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// Monthly report config -- add entries for each new month
-const reports: Record<string, { title: string; month: number; year: number; intro: string }> = {
-  "march-2026-vehicle-recalls": {
-    title: "March 2026 Vehicle Recalls: What You Need to Know",
-    month: 3,
-    year: 2026,
-    intro: "Here's a rundown of vehicle safety recalls reported to NHTSA in March 2026. If your vehicle is on this list, contact your dealer for a free repair.",
-  },
+const MONTH_NAMES: Record<string, number> = {
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
 };
 
+/** Parse slug like "march-2026-vehicle-recalls" into { month, year } */
+function parseSlug(slug: string): { month: number; year: number } | null {
+  const match = slug.match(/^([a-z]+)-(\d{4})-vehicle-recalls$/);
+  if (!match) return null;
+  const month = MONTH_NAMES[match[1]];
+  const year = parseInt(match[2], 10);
+  if (!month || isNaN(year)) return null;
+  return { month, year };
+}
+
 export async function generateStaticParams() {
-  return Object.keys(reports).map((slug) => ({ slug }));
+  const months = await getDistinctRecallMonths();
+  return months.map((m) => ({ slug: m.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const report = reports[slug];
-  if (!report) return {};
+  const parsed = parseSlug(slug);
+  if (!parsed) return {};
+  const monthLabel = new Date(parsed.year, parsed.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const title = `${monthLabel} Vehicle Recalls: What You Need to Know`;
   return {
-    title: report.title,
-    description: `${report.title}. All safety recalls reported to NHTSA this month, with affected vehicles, components, and what to do.`,
+    title,
+    description: `${title}. All safety recalls reported to NHTSA in ${monthLabel}, with affected vehicles, components, and what to do.`,
     alternates: { canonical: `https://www.recallscanner.com/blog/${slug}` },
   };
 }
@@ -38,10 +46,15 @@ export const revalidate = 3600;
 
 export default async function BlogPost({ params }: Props) {
   const { slug } = await params;
-  const report = reports[slug];
-  if (!report) notFound();
+  const parsed = parseSlug(slug);
+  if (!parsed) notFound();
 
-  const recalls = await getRecallsForMonth(report.month, report.year);
+  const recalls = await getRecallsForMonth(parsed.month, parsed.year);
+  if (recalls.length === 0) notFound();
+
+  const monthLabel = new Date(parsed.year, parsed.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const title = `${monthLabel} Vehicle Recalls: What You Need to Know`;
+  const intro = `Here's a rundown of vehicle safety recalls reported to NHTSA in ${monthLabel}. If your vehicle is on this list, contact your dealer for a free repair.`;
 
   // Group by brand
   const byBrand = new Map<string, typeof recalls>();
@@ -80,20 +93,18 @@ export default async function BlogPost({ params }: Props) {
     return text.includes("fire") || text.includes("crash") || text.includes("injury") || text.includes("death");
   }).slice(0, 5);
 
-  const monthName = new Date(report.year, report.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-
   return (
     <article className="max-w-3xl mx-auto px-4 py-12">
       {/* Breadcrumb */}
       <nav className="text-sm text-slate-400 mb-6">
         <Link href="/blog" className="hover:text-brand">Reports</Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-700">{monthName}</span>
+        <span className="text-slate-700">{monthLabel}</span>
       </nav>
 
-      <h1 className="text-3xl font-bold mb-3">{report.title}</h1>
-      <time className="text-sm text-slate-400 block mb-6">{monthName}</time>
-      <p className="text-slate-600 mb-8 leading-relaxed">{report.intro}</p>
+      <h1 className="text-3xl font-bold mb-3">{title}</h1>
+      <time className="text-sm text-slate-400 block mb-6">{monthLabel}</time>
+      <p className="text-slate-600 mb-8 leading-relaxed">{intro}</p>
 
       {/* At a glance */}
       <div className="grid grid-cols-3 gap-4 mb-10">

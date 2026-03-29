@@ -289,6 +289,35 @@ export async function getRecallsForMonth(month: number, year: number): Promise<R
   return rows.map(toRecall);
 }
 
+/** Get all distinct months that have recall data (for blog index + sitemap) */
+export async function getDistinctRecallMonths(): Promise<{ month: number; year: number; count: number; slug: string }[]> {
+  const rows = await query<DbRecall>(
+    "nhtsa_recalls",
+    `select=report_date`,
+    true
+  );
+  const monthMap = new Map<string, { month: number; year: number; count: number }>();
+  for (const r of rows) {
+    if (!r.report_date) continue;
+    const parts = r.report_date.split("/");
+    if (parts.length !== 3) continue;
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    if (isNaN(month) || isNaN(year)) continue;
+    const key = `${year}-${month}`;
+    const existing = monthMap.get(key);
+    if (existing) existing.count++;
+    else monthMap.set(key, { month, year, count: 1 });
+  }
+  const monthNames = ["", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+  return Array.from(monthMap.values())
+    .map(m => ({
+      ...m,
+      slug: `${monthNames[m.month]}-${m.year}-vehicle-recalls`,
+    }))
+    .sort((a, b) => b.year - a.year || b.month - a.month);
+}
+
 /** Get all models for sitemap generation */
 export async function getAllModels(): Promise<DbModel[]> {
   return query<DbModel>(
