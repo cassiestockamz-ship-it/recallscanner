@@ -102,13 +102,13 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - No Amazon affiliate tag currently
 - Ad slot placeholders: `AdSlot.tsx` with 4 positions (between-results, sidebar, after-tool, after-results)
 
-## Monthly Blog Reports
-- Blog posts are auto-generated from DB data -- no manual writing
-- Post registry: `src/app/blog/page.tsx` (add new entries to `posts` array)
-- Post config: `src/app/blog/[slug]/page.tsx` (add to `reports` object with month/year)
-- To add a new month: add entry to both files, deploy. Data is pulled from `getRecallsForMonth()`
-- Current posts: March 2026
-- Schedule: one post per month, ideally at month end
+## Monthly Blog Reports (Fully Automated)
+- Blog posts are 100% auto-generated from DB data -- zero code changes needed
+- Blog index (`/blog`) auto-discovers all months with recall data via `getDistinctRecallMonths()`
+- Blog posts (`/blog/[slug]`) parse slug format `[month]-[year]-vehicle-recalls` and query DB
+- New months appear automatically as the daily pipeline ingests new recall data
+- Sitemap also auto-includes all blog post URLs
+- Each post shows: recall count, brands affected, critical recalls, component breakdown, brand-by-brand details
 
 ## Reliability Scores
 - Shown on model pages (`/recalls/[make]/[model]`) as a scorecard above the VIN checker
