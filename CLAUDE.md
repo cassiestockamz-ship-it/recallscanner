@@ -36,8 +36,11 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - `/vin/[vin]` -- VIN results page (decode + recalls)
 - `/recalls` -- All brands listing
 - `/recalls/[make]` -- Brand page with model grid + recent recalls
-- `/recalls/[make]/[model]` -- Model page with all recalls + complaints
+- `/recalls/[make]/[model]` -- Model page with all recalls + complaints + reliability scorecard
 - `/most-recalled` -- Recent recalls across all makes
+- `/trends` -- Data visualizations: recalls by year, brand, component, most-recalled models
+- `/blog` -- Monthly recall report index
+- `/blog/[slug]` -- Individual monthly report (auto-generated from DB data)
 - `/about` -- About page
 - `/privacy` -- Privacy policy
 
@@ -46,7 +49,8 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 
 ### Data Layer (`src/lib/`)
 - `nhtsa.ts` -- NHTSA API functions (VIN decode, VIN recalls, make/model recalls), types, slug helpers, POPULAR_MAKES list
-- `db.ts` -- Supabase REST queries for pre-fetched data (models, recalls, complaints). 1hr ISR revalidation. Maps DB rows to NHTSA-style interfaces.
+- `nhtsa.ts` also has `formatDate()` utility for DD/MM/YYYY -> "Oct 31, 2024" conversion
+- `db.ts` -- Supabase REST queries for pre-fetched data (models, recalls, complaints, trends, reliability, blog). 1hr ISR revalidation. Maps DB rows to NHTSA-style interfaces. Uses `allRows=true` param for aggregate queries (bypasses 1000-row default).
 
 ### Components (`src/components/`)
 - `VinChecker.tsx` -- VIN input form (client component)
@@ -97,6 +101,19 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - CJ Affiliate: applied, awaiting approval
 - No Amazon affiliate tag currently
 - Ad slot placeholders: `AdSlot.tsx` with 4 positions (between-results, sidebar, after-tool, after-results)
+
+## Monthly Blog Reports
+- Blog posts are auto-generated from DB data -- no manual writing
+- Post registry: `src/app/blog/page.tsx` (add new entries to `posts` array)
+- Post config: `src/app/blog/[slug]/page.tsx` (add to `reports` object with month/year)
+- To add a new month: add entry to both files, deploy. Data is pulled from `getRecallsForMonth()`
+- Current posts: March 2026
+- Schedule: one post per month, ideally at month end
+
+## Reliability Scores
+- Shown on model pages (`/recalls/[make]/[model]`) as a scorecard above the VIN checker
+- Score: 1-10 scale based on recall count, complaint volume, crash/fire/death reports
+- Data: computed from `getModelReliability()` in db.ts
 
 ## VPS Pipeline
 - Runs on DO VPS (198.199.91.55) via PM2 cron
