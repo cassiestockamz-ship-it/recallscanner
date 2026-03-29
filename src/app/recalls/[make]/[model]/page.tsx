@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { POPULAR_MAKES, makeSlug, unslug } from "@/lib/nhtsa";
-import { getModelsForMake, getRecallsForModel, getComplaintsForModel } from "@/lib/db";
+import { getModelsForMake, getRecallsForModel, getComplaintsForModel, getModelReliability } from "@/lib/db";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import RecallList from "@/components/RecallList";
@@ -43,10 +43,33 @@ export default async function ModelPage({ params }: Props) {
   const modelDisplay = matchingModel.model;
 
   // Single Supabase query each -- no more 10+ NHTSA API calls
-  const [recalls, complaints] = await Promise.all([
+  const [recalls, complaints, reliability] = await Promise.all([
     getRecallsForModel(makeParam, modelParam),
     getComplaintsForModel(makeParam, modelParam),
+    getModelReliability(makeParam, modelParam),
   ]);
+
+  // Compute a simple reliability score (10 = best, 1 = worst)
+  // Based on recall count and complaint severity
+  function computeScore() {
+    if (!reliability) return null;
+    let score = 10;
+    // Deduct for recalls (heavy penalty)
+    if (reliability.recallCount > 40) score -= 4;
+    else if (reliability.recallCount > 20) score -= 3;
+    else if (reliability.recallCount > 10) score -= 2;
+    else if (reliability.recallCount > 5) score -= 1;
+    // Deduct for crashes/fires
+    if (reliability.crashes > 10 || reliability.fires > 5) score -= 2;
+    else if (reliability.crashes > 3 || reliability.fires > 1) score -= 1;
+    // Deduct for deaths
+    if (reliability.deaths > 0) score -= 1;
+    // Deduct for high complaint volume
+    if (reliability.complaintCount > 100) score -= 2;
+    else if (reliability.complaintCount > 30) score -= 1;
+    return Math.max(1, Math.min(10, score));
+  }
+  const reliabilityScore = computeScore();
 
   // JSON-LD structured data
   const jsonLd = {
@@ -83,6 +106,34 @@ export default async function ModelPage({ params }: Props) {
         {complaints.length > 0 &&
           ` Plus ${complaints.length.toLocaleString()} owner complaints.`}
       </p>
+
+      {/* Reliability scorecard */}
+      {reliability && reliabilityScore !== null && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
+          <div className="bg-white border border-border rounded-lg p-4 text-center">
+            <div className={`text-2xl font-bold ${reliabilityScore >= 7 ? "text-safe" : reliabilityScore >= 4 ? "text-amber-500" : "text-danger"}`}>
+              {reliabilityScore}/10
+            </div>
+            <div className="text-xs text-slate-500">Recall Score</div>
+          </div>
+          <div className="bg-white border border-border rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-slate-700">{reliability.recallCount}</div>
+            <div className="text-xs text-slate-500">Recalls</div>
+          </div>
+          <div className="bg-white border border-border rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-slate-700">{reliability.complaintCount.toLocaleString()}</div>
+            <div className="text-xs text-slate-500">Complaints</div>
+          </div>
+          <div className="bg-white border border-border rounded-lg p-4 text-center">
+            <div className={`text-2xl font-bold ${reliability.crashes > 0 ? "text-danger" : "text-safe"}`}>{reliability.crashes}</div>
+            <div className="text-xs text-slate-500">Crash Reports</div>
+          </div>
+          <div className="bg-white border border-border rounded-lg p-4 text-center">
+            <div className={`text-2xl font-bold ${reliability.fires > 0 ? "text-danger" : "text-safe"}`}>{reliability.fires}</div>
+            <div className="text-xs text-slate-500">Fire Reports</div>
+          </div>
+        </div>
+      )}
 
       {/* VIN checker */}
       <div className="bg-blue-50 rounded-lg p-6 mb-10">

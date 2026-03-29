@@ -91,9 +91,12 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - Zone: 877618c3c8ba8ad9b6b42cdfdf1cb130
 - Email: hello@recallscanner.com -> cassiestockamz@gmail.com (routing)
 
-## Affiliate
-- FlexOffers: verification tag present (`fo-verify` meta in layout.tsx), not yet integrated into content
+## Monetization
+- Google AdSense: ca-pub-7557739369186741 (script in layout.tsx `<head>`, added 2026-03-29, pending review)
+- FlexOffers: verification tag present (`fo-verify` meta in layout.tsx), awaiting approval
+- CJ Affiliate: applied, awaiting approval
 - No Amazon affiliate tag currently
+- Ad slot placeholders: `AdSlot.tsx` with 4 positions (between-results, sidebar, after-tool, after-results)
 
 ## VPS Pipeline
 - Runs on DO VPS (198.199.91.55) via PM2 cron

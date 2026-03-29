@@ -12,9 +12,11 @@ export default function Header() {
           </svg>
           RecallScanner
         </Link>
-        <nav className="flex items-center gap-4 sm:gap-6 text-sm font-medium text-slate-600">
-          <Link href="/recalls" className="hover:text-brand transition-colors">All Brands</Link>
-          <Link href="/most-recalled" className="hover:text-brand transition-colors hidden sm:inline">Most Recalled</Link>
+        <nav className="flex items-center gap-3 sm:gap-5 text-sm font-medium text-slate-600">
+          <Link href="/recalls" className="hover:text-brand transition-colors">Brands</Link>
+          <Link href="/trends" className="hover:text-brand transition-colors hidden sm:inline">Trends</Link>
+          <Link href="/most-recalled" className="hover:text-brand transition-colors hidden sm:inline">Latest</Link>
+          <Link href="/blog" className="hover:text-brand transition-colors hidden sm:inline">Reports</Link>
           <Link href="/vin" className="hover:text-brand transition-colors">VIN Check</Link>
         </nav>
       </div>
