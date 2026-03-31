@@ -7,6 +7,7 @@ import VinChecker from "@/components/VinChecker";
 import SearchFilter from "@/components/SearchFilter";
 import EmailCapture from "@/components/EmailCapture";
 import AdSlot from "@/components/AdSlot";
+import SafetyProductRec from "@/components/SafetyProductRec";
 
 interface Props {
   params: Promise<{ make: string }>;
@@ -164,6 +165,8 @@ export default async function MakePage({ params }: Props) {
       )}
 
       <AdSlot position="after-results" />
+
+      <SafetyProductRec />
 
       {/* FAQ */}
       <div className="mt-12 pt-8 border-t border-border">
