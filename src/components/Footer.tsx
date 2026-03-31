@@ -41,8 +41,9 @@ export default function Footer() {
             </p>
           </div>
         </div>
-        <div className="mt-8 pt-4 border-t border-border text-center text-xs text-slate-400">
-          &copy; {new Date().getFullYear()} RecallScanner. Not affiliated with NHTSA or any government agency.
+        <div className="mt-8 pt-4 border-t border-border text-center text-xs text-slate-400 space-y-1">
+          <p>&copy; {new Date().getFullYear()} RecallScanner. Not affiliated with NHTSA or any government agency.</p>
+          <p>As an Amazon Associate, we earn from qualifying purchases.</p>
         </div>
       </div>
     </footer>

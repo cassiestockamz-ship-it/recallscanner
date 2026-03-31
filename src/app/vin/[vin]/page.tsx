@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import EmailCapture from "@/components/EmailCapture";
 import AdSlot from "@/components/AdSlot";
+import SafetyProductRec from "@/components/SafetyProductRec";
 
 interface Props {
   params: Promise<{ vin: string }>;
@@ -242,6 +243,8 @@ export default async function VinPage({ params }: Props) {
       )}
 
       <AdSlot position="after-results" className="mb-8" />
+
+      <SafetyProductRec />
 
       {/* Email capture */}
       {vinRecognized && (

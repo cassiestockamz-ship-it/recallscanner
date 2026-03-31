@@ -7,6 +7,7 @@ import VinChecker from "@/components/VinChecker";
 import RecallList from "@/components/RecallList";
 import EmailCapture from "@/components/EmailCapture";
 import AdSlot from "@/components/AdSlot";
+import SafetyProductRec from "@/components/SafetyProductRec";
 
 interface Props {
   params: Promise<{ make: string; model: string }>;
@@ -152,6 +153,8 @@ export default async function ModelPage({ params }: Props) {
       />
 
       <AdSlot position="after-results" className="my-8" />
+
+      <SafetyProductRec />
 
       {/* Email capture */}
       <div className="my-10">
