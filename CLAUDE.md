@@ -99,7 +99,10 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - Google AdSense: ca-pub-7557739369186741 (script in layout.tsx `<head>`, added 2026-03-29, pending review)
 - FlexOffers: verification tag present (`fo-verify` meta in layout.tsx), awaiting approval
 - CJ Affiliate: applied, awaiting approval
-- No Amazon affiliate tag currently
+- **Amazon Associates:** tag `kawaiiguy0f-rs-20`, resqme escape tool (ASIN B000IE0EZO)
+  - Component: `SafetyProductRec.tsx` — clickable card with self-hosted product image (`/images/resqme.jpg`)
+  - Shows on: brand pages (`/recalls/[make]`), model pages (`/recalls/[make]/[model]`), VIN results (`/vin/[vin]`)
+  - FTC disclosure: inline on card + footer
 - Ad slot placeholders: `AdSlot.tsx` with 4 positions (between-results, sidebar, after-tool, after-results)
 
 ## Monthly Blog Reports (Fully Automated)
