@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecallsForMonth, getDistinctRecallMonths } from "@/lib/db";
 import { formatDate, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
 import EmailCapture from "@/components/EmailCapture";
+import SafetyProductRec from "@/components/SafetyProductRec";
 import type { Metadata } from "next";
 
 interface Props {
@@ -220,6 +221,9 @@ export default async function BlogPost({ params }: Props) {
           <li>Sign up below to get notified about future recalls for your vehicle</li>
         </ol>
       </section>
+
+      {/* Safety product affiliate card */}
+      <SafetyProductRec />
 
       {/* Email capture */}
       <EmailCapture variant="banner" />
