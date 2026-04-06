@@ -318,10 +318,19 @@ export async function getDistinctRecallMonths(): Promise<{ month: number; year: 
     .sort((a, b) => b.year - a.year || b.month - a.month);
 }
 
-/** Get all models for sitemap generation */
+/** Get all models for sitemap generation (only models that have recalls) */
 export async function getAllModels(): Promise<DbModel[]> {
-  return query<DbModel>(
+  // Use inner join via PostgREST resource embedding to filter to models with recalls
+  const allModels = await query<DbModel>(
     "nhtsa_models",
     `order=make.asc,model.asc&select=make,make_slug,model,model_slug,latest_year`
   );
+  // Filter to only models that have at least one recall
+  const modelsWithRecalls = await query<{ make_slug: string; model_slug: string }>(
+    "nhtsa_recalls",
+    `select=make_slug,model_slug`,
+    true
+  );
+  const recallSet = new Set(modelsWithRecalls.map(r => `${r.make_slug}/${r.model_slug}`));
+  return allModels.filter(m => recallSet.has(`${m.make_slug}/${m.model_slug}`));
 }

@@ -62,7 +62,7 @@ export function makeSlug(make: string): string {
 }
 
 export function modelSlug(model: string): string {
-  return model.toLowerCase().replace(/[\s/]+/g, "-").replace(/[^a-z0-9-]/g, "");
+  return model.toLowerCase().replace(/[\s/]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
 
 export function unslug(slug: string): string {
