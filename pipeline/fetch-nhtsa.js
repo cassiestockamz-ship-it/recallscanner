@@ -249,6 +249,31 @@ async function main() {
   const totalRecalls = results.reduce((s, r) => s + r.recalls, 0);
   const errors = results.filter((r) => r.error);
 
+  // Clean up models with no recalls or complaints (avoids soft 404s in GSC)
+  try {
+    const [{ data: recallSlugs }, { data: complaintSlugs }, { data: allModels }] = await Promise.all([
+      db.from("nhtsa_recalls").select("make_slug,model_slug"),
+      db.from("nhtsa_complaints").select("make_slug,model_slug"),
+      db.from("nhtsa_models").select("id,make_slug,model_slug"),
+    ]);
+    const hasData = new Set([
+      ...(recallSlugs || []).map(r => `${r.make_slug}/${r.model_slug}`),
+      ...(complaintSlugs || []).map(c => `${c.make_slug}/${c.model_slug}`),
+    ]);
+    const orphanIds = (allModels || [])
+      .filter(m => !hasData.has(`${m.make_slug}/${m.model_slug}`))
+      .map(m => m.id);
+    if (orphanIds.length > 0) {
+      // Delete in batches of 100
+      for (let i = 0; i < orphanIds.length; i += 100) {
+        await db.from("nhtsa_models").delete().in("id", orphanIds.slice(i, i + 100));
+      }
+      console.log(`  Cleaned up ${orphanIds.length} zero-data models`);
+    }
+  } catch (err) {
+    console.error(`  Model cleanup failed: ${err.message}`);
+  }
+
   // Get actual DB totals for the summary (includes previously stored data)
   let dbModels = totalModels, dbRecalls = totalRecalls;
   try {

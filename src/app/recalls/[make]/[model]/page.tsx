@@ -50,9 +50,6 @@ export default async function ModelPage({ params }: Props) {
     getModelReliability(makeParam, modelParam),
   ]);
 
-  // Return 404 for models with no recalls and no complaints (avoids soft 404 in GSC)
-  if (recalls.length === 0 && complaints.length === 0) notFound();
-
   // Compute a simple reliability score (10 = best, 1 = worst)
   // Based on recall count and complaint severity
   function computeScore() {
