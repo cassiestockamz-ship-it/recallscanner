@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `VIN ${vin} Recall Check Results`,
     description: `Recall check results for VIN ${vin}. See all open safety recalls and what the manufacturer will fix for free.`,
     robots: { index: false, follow: true },
+    alternates: { canonical: "https://www.recallscanner.com/vin" },
   };
 }
 

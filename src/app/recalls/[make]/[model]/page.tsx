@@ -50,6 +50,9 @@ export default async function ModelPage({ params }: Props) {
     getModelReliability(makeParam, modelParam),
   ]);
 
+  // Soft-404 prevention: don't render thin pages with no real data.
+  if (recalls.length === 0 && complaints.length === 0) notFound();
+
   // Compute a simple reliability score (10 = best, 1 = worst)
   // Based on recall count and complaint severity
   function computeScore() {
