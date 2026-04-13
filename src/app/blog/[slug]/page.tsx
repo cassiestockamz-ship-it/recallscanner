@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecallsForMonth, getDistinctRecallMonths } from "@/lib/db";
 import { formatDate, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
 import EmailCapture from "@/components/EmailCapture";
-import SafetyProductRec from "@/components/SafetyProductRec";
+import BlogEditorial from "@/components/BlogEditorial";
 import type { Metadata } from "next";
 
 interface Props {
@@ -55,7 +55,6 @@ export default async function BlogPost({ params }: Props) {
 
   const monthLabel = new Date(parsed.year, parsed.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const title = `${monthLabel} Vehicle Recalls: What You Need to Know`;
-  const intro = `Here's a rundown of vehicle safety recalls reported to NHTSA in ${monthLabel}. If your vehicle is on this list, contact your dealer for a free repair.`;
 
   // Group by brand
   const byBrand = new Map<string, typeof recalls>();
@@ -105,7 +104,15 @@ export default async function BlogPost({ params }: Props) {
 
       <h1 className="text-3xl font-bold mb-3">{title}</h1>
       <time className="text-sm text-slate-400 block mb-6">{monthLabel}</time>
-      <p className="text-slate-600 mb-8 leading-relaxed">{intro}</p>
+
+      {/* Editorial analysis — unique per month */}
+      <BlogEditorial
+        monthLabel={monthLabel}
+        recalls={recalls}
+        brandEntries={brandEntries}
+        topComponents={topComponents}
+        criticalCount={critical.length}
+      />
 
       {/* At a glance */}
       <div className="grid grid-cols-3 gap-4 mb-10">
@@ -221,9 +228,6 @@ export default async function BlogPost({ params }: Props) {
           <li>Sign up below to get notified about future recalls for your vehicle</li>
         </ol>
       </section>
-
-      {/* Safety product affiliate card */}
-      <SafetyProductRec />
 
       {/* Email capture */}
       <EmailCapture variant="banner" />

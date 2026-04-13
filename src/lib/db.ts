@@ -325,12 +325,17 @@ export async function getAllModels(): Promise<DbModel[]> {
     "nhtsa_models",
     `order=make.asc,model.asc&select=make,make_slug,model,model_slug,latest_year`
   );
-  // Filter to only models that have at least one recall
+  // Filter to only models with enough recalls to justify an indexable page (AdSense / HCU: no thin programmatic pages)
   const modelsWithRecalls = await query<{ make_slug: string; model_slug: string }>(
     "nhtsa_recalls",
     `select=make_slug,model_slug`,
     true
   );
-  const recallSet = new Set(modelsWithRecalls.map(r => `${r.make_slug}/${r.model_slug}`));
-  return allModels.filter(m => recallSet.has(`${m.make_slug}/${m.model_slug}`));
+  const recallCounts = new Map<string, number>();
+  for (const r of modelsWithRecalls) {
+    const key = `${r.make_slug}/${r.model_slug}`;
+    recallCounts.set(key, (recallCounts.get(key) || 0) + 1);
+  }
+  const MIN_RECALLS_FOR_INDEX = 3;
+  return allModels.filter((m) => (recallCounts.get(`${m.make_slug}/${m.model_slug}`) || 0) >= MIN_RECALLS_FOR_INDEX);
 }

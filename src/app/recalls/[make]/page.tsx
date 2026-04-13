@@ -6,8 +6,7 @@ import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import SearchFilter from "@/components/SearchFilter";
 import EmailCapture from "@/components/EmailCapture";
-import AdSlot from "@/components/AdSlot";
-import SafetyProductRec from "@/components/SafetyProductRec";
+import BrandEditorial from "@/components/BrandEditorial";
 
 interface Props {
   params: Promise<{ make: string }>;
@@ -30,31 +29,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const revalidate = 3600;
 
-function getBrandFAQs(make: string) {
-  return [
-    {
-      q: `How do I check if my ${make} has a recall?`,
-      a: `Enter your 17-digit VIN in the search tool above. RecallScanner checks the official NHTSA database and instantly shows any open recalls for your specific ${make} vehicle, including the affected component, risk description, and available remedy.`,
-    },
-    {
-      q: `Are ${make} recall repairs free?`,
-      a: `Yes. By federal law, manufacturers must fix recalled vehicles at no cost to the owner, regardless of whether you bought the vehicle new or used, and even if it's out of warranty. Contact any authorized ${make} dealership to schedule the repair.`,
-    },
-    {
-      q: `How often are ${make} recalls updated?`,
-      a: `RecallScanner pulls data directly from the National Highway Traffic Safety Administration (NHTSA). Our database refreshes daily, so new ${make} recalls typically appear within 24 hours of being issued by NHTSA.`,
-    },
-    {
-      q: `What should I do if my ${make} has an open recall?`,
-      a: `Contact your nearest authorized ${make} dealership and provide your VIN. You don't need to visit the dealership where you purchased the vehicle — any authorized ${make} dealer can perform the recall repair for free. Some recalls may require parts to be ordered, so call ahead.`,
-    },
-    {
-      q: `Can I check a used ${make} for recalls before buying?`,
-      a: `Absolutely. Enter the vehicle's VIN in the checker above to see all past and open recalls. This is an important step when buying a used ${make}, as previous owners may not have completed all recall repairs. Unresolved recalls can affect both safety and resale value.`,
-    },
-  ];
-}
-
 export default async function MakePage({ params }: Props) {
   const { make: slug } = await params;
   const make = findMake(slug);
@@ -73,23 +47,8 @@ export default async function MakePage({ params }: Props) {
   // Other popular brands for cross-linking
   const otherBrands = POPULAR_MAKES.filter((m) => m !== make).slice(0, 8);
 
-  const brandFaqs = getBrandFAQs(make);
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: brandFaqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.q,
-      acceptedAnswer: { "@type": "Answer", text: faq.a },
-    })),
-  };
-
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
       {/* Breadcrumb */}
       <nav className="text-sm text-slate-400 mb-6">
         <Link href="/recalls" className="hover:text-brand">All Brands</Link>
@@ -103,8 +62,11 @@ export default async function MakePage({ params }: Props) {
         Select a model below or check your specific vehicle by VIN.
       </p>
 
+      {/* Brand editorial — unique analysis derived from live NHTSA data */}
+      <BrandEditorial make={make} recalls={recalls} modelCount={models.length} />
+
       {/* VIN checker */}
-      <div className="bg-blue-50 rounded-lg p-6 mb-10">
+      <div className="bg-blue-50 rounded-lg p-6 mb-10 mt-10">
         <h2 className="font-semibold text-lg mb-3">Check Your {make} by VIN</h2>
         <VinChecker />
       </div>
@@ -113,12 +75,8 @@ export default async function MakePage({ params }: Props) {
       <h2 className="text-2xl font-bold mb-4">{make} Models with Recalls</h2>
       <SearchFilter items={modelItems} placeholder={`Search ${make} models...`} />
 
-      <div className="my-10">
-        <AdSlot position="between-results" />
-      </div>
-
       {/* Email capture */}
-      <div className="mb-10">
+      <div className="my-10">
         <EmailCapture vehicleName={`${make} vehicles`} variant="banner" />
       </div>
 
@@ -163,23 +121,6 @@ export default async function MakePage({ params }: Props) {
           </div>
         </>
       )}
-
-      <AdSlot position="after-results" />
-
-      <SafetyProductRec />
-
-      {/* FAQ */}
-      <div className="mt-12 pt-8 border-t border-border">
-        <h2 className="text-2xl font-bold mb-4">{make} Recall FAQ</h2>
-        <div className="space-y-4">
-          {brandFaqs.map((faq) => (
-            <div key={faq.q} className="bg-white rounded-lg border border-border p-5">
-              <h3 className="font-semibold text-slate-800 mb-2">{faq.q}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Cross-links to other brands */}
       <div className="mt-12 pt-8 border-t border-border">

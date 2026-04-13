@@ -6,8 +6,7 @@ import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import RecallList from "@/components/RecallList";
 import EmailCapture from "@/components/EmailCapture";
-import AdSlot from "@/components/AdSlot";
-import SafetyProductRec from "@/components/SafetyProductRec";
+import ModelEditorial from "@/components/ModelEditorial";
 
 interface Props {
   params: Promise<{ make: string; model: string }>;
@@ -22,10 +21,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const make = findMake(makeParam);
   if (!make) return {};
   const modelDisplay = unslug(modelParam).toUpperCase();
+
+  // Noindex very thin model pages so search engines don't index near-empty records.
+  // The page still renders for direct visitors / VIN cross-links, it just won't be indexed.
+  const [recalls, complaints] = await Promise.all([
+    getRecallsForModel(makeParam, modelParam),
+    getComplaintsForModel(makeParam, modelParam),
+  ]);
+  const isThin = recalls.length < 3 && complaints.length < 20;
+
   return {
     title: `${make} ${modelDisplay} Recalls — Safety Recalls & Complaints`,
     description: `All safety recalls and NHTSA complaints for the ${make} ${modelDisplay}. Check by VIN, see affected years, components, and free repair details.`,
     alternates: { canonical: `https://www.recallscanner.com/recalls/${makeParam}/${modelParam}` },
+    ...(isThin ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
@@ -147,17 +156,24 @@ export default async function ModelPage({ params }: Props) {
         <VinChecker />
       </div>
 
-      {/* Interactive recall list with year filtering */}
-      <RecallList
-        recalls={recalls}
-        complaints={complaints}
+      {/* Editorial analysis — unique per model, derived from live data */}
+      <ModelEditorial
         make={make}
         modelDisplay={modelDisplay}
+        recalls={recalls}
+        complaints={complaints}
+        reliability={reliability}
       />
 
-      <AdSlot position="after-results" className="my-8" />
-
-      <SafetyProductRec />
+      {/* Interactive recall list with year filtering */}
+      <div className="mt-10">
+        <RecallList
+          recalls={recalls}
+          complaints={complaints}
+          make={make}
+          modelDisplay={modelDisplay}
+        />
+      </div>
 
       {/* Email capture */}
       <div className="my-10">

@@ -21,29 +21,36 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h3 className="font-semibold text-slate-700 mb-2">Tools</h3>
+            <h3 className="font-semibold text-slate-700 mb-2">Tools & Guides</h3>
             <div className="flex flex-col gap-1">
               <Link href="/vin" className="hover:text-brand transition-colors">VIN Recall Check</Link>
               <Link href="/recalls" className="hover:text-brand transition-colors">Browse All Brands</Link>
               <Link href="/most-recalled" className="hover:text-brand transition-colors">Most Recalled</Link>
-              <Link href="/about" className="hover:text-brand transition-colors">About</Link>
-              <Link href="/privacy" className="hover:text-brand transition-colors">Privacy Policy</Link>
+              <Link href="/trends" className="hover:text-brand transition-colors">Recall Trends</Link>
+              <Link href="/blog" className="hover:text-brand transition-colors">Monthly Reports</Link>
             </div>
           </div>
           <div>
-            <h3 className="font-semibold text-slate-700 mb-2">Data Source</h3>
-            <p>
-              All recall data comes from the{" "}
-              <a href="https://www.nhtsa.gov" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">
-                National Highway Traffic Safety Administration (NHTSA)
-              </a>
-              . Updated daily.
-            </p>
+            <h3 className="font-semibold text-slate-700 mb-2">About & Policies</h3>
+            <div className="flex flex-col gap-1">
+              <Link href="/about" className="hover:text-brand transition-colors">About RecallScanner</Link>
+              <Link href="/methodology" className="hover:text-brand transition-colors">How We Research</Link>
+              <Link href="/contact" className="hover:text-brand transition-colors">Contact</Link>
+              <Link href="/privacy" className="hover:text-brand transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-brand transition-colors">Terms of Use</Link>
+              <Link href="/disclaimer" className="hover:text-brand transition-colors">Disclaimer</Link>
+            </div>
           </div>
         </div>
         <div className="mt-8 pt-4 border-t border-border text-center text-xs text-slate-400 space-y-1">
-          <p>&copy; {new Date().getFullYear()} RecallScanner. Not affiliated with NHTSA or any government agency.</p>
-          <p>As an Amazon Associate, we earn from qualifying purchases.</p>
+          <p>
+            Recall data sourced daily from the{" "}
+            <a href="https://www.nhtsa.gov" target="_blank" rel="noopener noreferrer" className="hover:text-brand underline">
+              National Highway Traffic Safety Administration (NHTSA)
+            </a>
+            .
+          </p>
+          <p>&copy; {new Date().getFullYear()} RecallScanner. Independent publisher. Not affiliated with NHTSA, any automaker, or any government agency.</p>
         </div>
       </div>
     </footer>

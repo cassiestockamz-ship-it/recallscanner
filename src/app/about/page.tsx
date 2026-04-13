@@ -3,50 +3,113 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About RecallScanner",
-  description: "RecallScanner provides free vehicle recall lookups powered by official NHTSA data. Learn about our mission and methodology.",
+  description: "RecallScanner is an independent publisher that turns NHTSA vehicle recall data into plain-English lookups. Learn about our mission, methodology, and editorial standards.",
   alternates: { canonical: "https://www.recallscanner.com/about" },
 };
 
 export default function AboutPage() {
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "RecallScanner",
+    url: "https://www.recallscanner.com",
+    logo: "https://www.recallscanner.com/opengraph-image.png",
+    description:
+      "Independent U.S. publisher that translates NHTSA vehicle recall and complaint data into free, plain-English lookups for owners and used-car buyers.",
+    sameAs: ["https://www.recallscanner.com"],
+  };
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+
       <h1 className="text-3xl font-bold mb-6">About RecallScanner</h1>
 
-      <div className="prose prose-slate max-w-none space-y-6 text-slate-600 text-sm leading-relaxed">
+      <div className="space-y-6 text-slate-600 text-[15px] leading-relaxed">
         <p>
-          RecallScanner is a free tool that helps vehicle owners check whether their car, truck, or SUV has any open safety recalls.
-          We believe everyone deserves quick, easy access to safety information about the vehicles they drive every day.
+          RecallScanner is an independent, privately operated reference site that turns the National Highway Traffic Safety
+          Administration&apos;s public vehicle-safety data into something normal drivers and used-car buyers can actually use.
+          We are not NHTSA. We are not a dealer, a law firm, or an automaker. We build software, read government APIs, and try
+          to make the answers you need take seconds instead of an afternoon.
         </p>
 
-        <h2 className="text-xl font-semibold text-slate-800 mt-8">Our Data Source</h2>
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">Why this site exists</h2>
         <p>
-          All recall data comes directly from the{" "}
-          <a href="https://www.nhtsa.gov" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">
-            National Highway Traffic Safety Administration (NHTSA)
-          </a>
-          , the official U.S. government agency responsible for vehicle safety. NHTSA maintains the most comprehensive database
-          of vehicle recalls, consumer complaints, and safety investigations in the United States.
+          The U.S. has one of the most comprehensive vehicle-safety data systems in the world, and almost none of it is
+          presented in a way regular people want to use. NHTSA&apos;s own recall lookup works, but it&apos;s built for a small
+          set of use cases — one VIN at a time, one campaign at a time, with little cross-reference between models, brands, or
+          historical patterns. Dealer and insurer tools are closed. Third-party tools either gate the data behind a paywall or
+          bury it under upsells.
+        </p>
+        <p>
+          We started RecallScanner because every time we bought a used car, checked a friend&apos;s recall status, or tried to
+          research a model&apos;s track record before a road trip, we ended up copy-pasting between multiple government pages.
+          The data was there. The usability wasn&apos;t.
         </p>
 
-        <h2 className="text-xl font-semibold text-slate-800 mt-8">How It Works</h2>
-        <p>
-          When you enter your VIN or browse by vehicle make and model, RecallScanner queries the NHTSA API in real-time
-          to retrieve the latest recall information. We do not store your VIN or any personal information.
-        </p>
-
-        <h2 className="text-xl font-semibold text-slate-800 mt-8">Important Notes</h2>
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">What we do</h2>
         <ul className="list-disc pl-5 space-y-2">
-          <li>RecallScanner is not affiliated with NHTSA or any government agency.</li>
-          <li>Recall repairs are always free — by law, manufacturers must fix recalled vehicles at no cost to the owner.</li>
-          <li>If your vehicle has an open recall, contact your nearest authorized dealership to schedule the repair.</li>
-          <li>Data is refreshed daily, but there may be a short delay between when NHTSA publishes a new recall and when it appears here.</li>
+          <li>
+            <strong>Live VIN lookups.</strong> Type in a 17-character VIN and we pass it directly to NHTSA&apos;s live API to
+            return the list of open recalls for that specific vehicle, plus a decoded vehicle summary.
+          </li>
+          <li>
+            <strong>Brand and model history pages.</strong> For every brand and model we track, we assemble the full recall
+            campaign history in one scrollable page, with component categorization, reliability scorecards, and filtering by
+            model year.
+          </li>
+          <li>
+            <strong>Owner-complaint context.</strong> Alongside recall data, we surface NHTSA complaint counts — including crash,
+            fire, injury, and death flags — so that a pattern forming in real-world reports is easier to notice.
+          </li>
+          <li>
+            <strong>Monthly recap reports.</strong> Every month we publish a plain-language summary of every recall NHTSA logged
+            in the preceding month, with a short editorial read on which brands and components stood out.
+          </li>
+          <li>
+            <strong>Editorial explainers.</strong> On top of each brand and model page we add a human-written analysis layer
+            that describes what the underlying numbers actually mean — the three most common recall categories, the model years
+            affected, the model with the highest campaign count, and how to use the page responsibly.
+          </li>
         </ul>
-        <h2 className="text-xl font-semibold text-slate-800 mt-8">Contact</h2>
+
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">Editorial standards</h2>
         <p>
-          Questions or feedback? Reach us at{" "}
-          <a href="mailto:hello@recallscanner.com" className="text-brand hover:underline">
-            hello@recallscanner.com
-          </a>
+          We keep the raw campaign records as NHTSA published them, minus obvious formatting cruft. When we add a written
+          analysis layer, it&apos;s clearly separated from the raw records and is generated from the live dataset at
+          publication time. We don&apos;t invent recalls, we don&apos;t pay for visibility, and we don&apos;t accept payment
+          from manufacturers to suppress or re-rank specific campaigns. The full details — data sources, refresh cadence, what
+          we calculate, and what we deliberately don&apos;t do — are on our{" "}
+          <Link href="/methodology" className="text-brand hover:underline">methodology page</Link>.
+        </p>
+
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">What RecallScanner is not</h2>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>We are not a government agency or a branch of NHTSA.</li>
+          <li>We are not affiliated with, endorsed by, or sponsored by any vehicle manufacturer or dealer network.</li>
+          <li>We do not provide legal, mechanical, or insurance advice. See our <Link href="/disclaimer" className="text-brand hover:underline">disclaimer</Link>.</li>
+          <li>We do not store the VINs you look up, sell your data, or run remarketing against your searches.</li>
+        </ul>
+
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">How we&apos;re funded</h2>
+        <p>
+          RecallScanner is free for everyone and will stay that way. The site covers its operating costs (servers, the daily
+          data pipeline, domain, monitoring) primarily through contextual advertising, which is clearly labeled and never
+          affects which recalls we show or how we categorize them. See our{" "}
+          <Link href="/disclaimer" className="text-brand hover:underline">disclaimer</Link> for the full advertising and
+          sponsorship statement.
+        </p>
+
+        <h2 className="text-xl font-semibold text-slate-800 mt-8">Corrections and contact</h2>
+        <p>
+          If you spot an error on any page — a missing recall, a stale status, an incorrect editorial claim — please{" "}
+          <Link href="/contact" className="text-brand hover:underline">contact us</Link> with the URL and what looks wrong. We
+          review every correction request and update against the live NHTSA source.
+        </p>
+        <p>
+          For anything else, email{" "}
+          <a href="mailto:hello@recallscanner.com" className="text-brand hover:underline">hello@recallscanner.com</a>
+          {" "}or see our <Link href="/contact" className="text-brand hover:underline">contact page</Link>.
         </p>
       </div>
 
