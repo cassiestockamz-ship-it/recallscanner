@@ -35,8 +35,82 @@ export default async function TrendsPage() {
   const totalRecalls = byYear.reduce((s, y) => s + y.count, 0);
   const totalBrands = byBrand.length;
 
+  // ── Schema.org Dataset markup ──
+  // This puts the RecallScanner aggregate recall dataset into Google Dataset
+  // Search. We describe what the dataset is, where it's sourced from, its
+  // temporal coverage, refresh frequency, and the license (NHTSA data is
+  // public domain; our aggregation layer is free-use with attribution).
+  const currentYear = new Date().getFullYear();
+  const earliestYear = byYear.length
+    ? Math.min(...byYear.map((y) => parseInt(y.year, 10)).filter((n) => !isNaN(n)))
+    : 2010;
+  const datasetLd = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: "US Vehicle Safety Recall Dataset",
+    alternateName: "RecallScanner Aggregate Recall Data",
+    description:
+      `An aggregated, severity-scored dataset of ${totalRecalls.toLocaleString()} US vehicle safety ` +
+      `recall campaigns from ${earliestYear} through ${currentYear}, covering ${totalBrands} ` +
+      `manufacturers. Sourced from NHTSA's public recall and complaint APIs, categorized by ` +
+      `component and severity tier, refreshed daily by an automated ingestion pipeline.`,
+    url: "https://www.recallscanner.com/trends",
+    sameAs: "https://www.recallscanner.com/trends",
+    keywords: [
+      "vehicle recalls",
+      "NHTSA",
+      "auto safety",
+      "recall campaigns",
+      "vehicle safety",
+      "automotive defects",
+      "complaint data",
+    ],
+    creator: {
+      "@type": "Organization",
+      name: "RecallScanner",
+      url: "https://www.recallscanner.com",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "RecallScanner",
+      url: "https://www.recallscanner.com",
+    },
+    sourceOrganization: {
+      "@type": "GovernmentOrganization",
+      name: "National Highway Traffic Safety Administration",
+      url: "https://www.nhtsa.gov",
+    },
+    temporalCoverage: `${earliestYear}/${currentYear}`,
+    spatialCoverage: {
+      "@type": "Country",
+      name: "United States",
+      alternateName: "US",
+    },
+    license: "https://creativecommons.org/publicdomain/zero/1.0/",
+    isAccessibleForFree: true,
+    datePublished: `${currentYear - 1}-01-01`,
+    dateModified: new Date().toISOString().slice(0, 10),
+    variableMeasured: [
+      { "@type": "PropertyValue", name: "Recall campaign count", unitText: "count" },
+      { "@type": "PropertyValue", name: "Complaints per model", unitText: "count" },
+      { "@type": "PropertyValue", name: "Severity score", minValue: 0, maxValue: 100 },
+      { "@type": "PropertyValue", name: "Injury reports", unitText: "count" },
+      { "@type": "PropertyValue", name: "Crash reports", unitText: "count" },
+      { "@type": "PropertyValue", name: "Fire reports", unitText: "count" },
+    ],
+    distribution: {
+      "@type": "DataDownload",
+      encodingFormat: "text/html",
+      contentUrl: "https://www.recallscanner.com/trends",
+    },
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetLd) }}
+      />
       <h1 className="text-3xl font-bold mb-2">Vehicle Recall Trends</h1>
       <p className="text-slate-500 mb-8">
         {totalRecalls.toLocaleString()} recalls across {totalBrands} brands. Updated daily from NHTSA.

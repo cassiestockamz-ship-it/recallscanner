@@ -1,3 +1,5 @@
+import CountUp from "./CountUp";
+
 interface Props {
   /** 0–100 */
   score: number;
@@ -7,7 +9,10 @@ interface Props {
 }
 
 /**
- * Pure SVG score dial. Server-renderable, zero JS, animates via CSS on mount.
+ * Pure SVG score dial. The arc sweeps via CSS keyframes on mount, and the
+ * number itself counts up from 0 to the score over ~800ms via a small
+ * client component (CountUp). SSR-safe — the server renders the final
+ * number for SEO crawlers; the client hydrates the animation on mount.
  * Circumference: 2πr = 2π·45 ≈ 282.743
  */
 export default function ScoreDial({ score, color, size = 140 }: Props) {
@@ -57,8 +62,9 @@ export default function ScoreDial({ score, color, size = 140 }: Props) {
           <div
             className="text-[36px] font-bold leading-none tabular-nums"
             style={{ color }}
+            aria-label={`RecallScore ${clamped} out of 100`}
           >
-            {clamped}
+            <CountUp value={clamped} duration={900} />
           </div>
           <div className="text-[9px] uppercase tracking-[0.12em] font-bold text-slate-500 mt-1">
             RecallScore

@@ -77,6 +77,10 @@ export default function HomePage() {
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["[data-speakable='faq-q']", "[data-speakable='faq-a']"],
+    },
     mainEntity: FAQS.map((faq) => ({
       "@type": "Question",
       name: faq.q,
@@ -163,8 +167,10 @@ export default function HomePage() {
             Check any 17-character VIN against the official NHTSA recall database and get a plain-English safety verdict in seconds. Free, unlimited, no signup.
           </p>
 
-          {/* The VIN checker — the star */}
-          <VinChecker autoFocus />
+          {/* The VIN checker, tagged so the sticky bar knows when to appear */}
+          <div data-vin-hero>
+            <VinChecker autoFocus />
+          </div>
 
           {/* Trust ribbon */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] text-slate-500">
@@ -320,9 +326,12 @@ export default function HomePage() {
                   <span className="inline-block w-4 text-center text-slate-400 transition-transform group-open:rotate-90">
                     ›
                   </span>
-                  {faq.q}
+                  <span data-speakable="faq-q">{faq.q}</span>
                 </summary>
-                <div className="px-5 pb-5 pl-12 text-slate-500 text-[14px] leading-relaxed">
+                <div
+                  className="px-5 pb-5 pl-12 text-slate-500 text-[14px] leading-relaxed"
+                  data-speakable="faq-a"
+                >
                   {faq.a}
                 </div>
               </details>

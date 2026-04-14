@@ -45,8 +45,22 @@ export default async function VinPage({ params }: Props) {
   );
   const remainingRecalls = sortedRecalls.slice(1);
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.recallscanner.com/" },
+      { "@type": "ListItem", position: 2, name: "VIN Check", item: "https://www.recallscanner.com/vin" },
+      { "@type": "ListItem", position: 3, name: "Results", item: "https://www.recallscanner.com/vin" },
+    ],
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="text-[12px] text-slate-400 mb-6 font-medium">
         <Link href="/" className="hover:text-[var(--color-brand)]">Home</Link>

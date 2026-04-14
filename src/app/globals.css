@@ -132,6 +132,35 @@ body {
 }
 
 /* ————————————————————————————————————————————————
+   View Transitions API — named persistent elements that
+   morph between route navigations. The Next router wraps
+   navigation in document.startViewTransition when
+   experimental.viewTransition is on, and any element with
+   a view-transition-name participates in the morph.
+   ———————————————————————————————————————————————— */
+
+/* Global crossfade timing for the default ::root animation */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Named morphs for persistent chrome */
+.vt-header      { view-transition-name: rs-header; }
+.vt-header-logo { view-transition-name: rs-header-logo; }
+.vt-sticky-vin  { view-transition-name: rs-sticky-vin; }
+.vt-vin-hero    { view-transition-name: rs-vin-hero; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ————————————————————————————————————————————————
    Guide prose — long-form article body styling for
    /guides/[slug] pages. Tight but readable, no Tailwind
    typography plugin.

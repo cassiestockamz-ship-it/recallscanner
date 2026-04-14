@@ -108,8 +108,8 @@ export default function VinChecker({ compact = false, autoFocus = false }: Props
       {/* Decoder strip */}
       <VinDecoderStrip vin={vin} compact={compact} />
 
-      {/* Input + button */}
-      <div className={`relative mt-3 ${compact ? "" : "shadow-[0_1px_0_rgba(15,23,42,0.04),0_12px_32px_-16px_rgba(15,23,42,0.22)]"} rounded-2xl bg-white border border-[var(--color-border)] focus-within:border-[var(--color-brand)] focus-within:ring-4 focus-within:ring-[var(--color-brand)]/10 transition-all`}>
+      {/* Input + button — tagged vt-vin-hero so it morphs between pages */}
+      <div className={`vt-vin-hero relative mt-3 ${compact ? "" : "shadow-[0_1px_0_rgba(15,23,42,0.04),0_12px_32px_-16px_rgba(15,23,42,0.22)]"} rounded-2xl bg-white border border-[var(--color-border)] focus-within:border-[var(--color-brand)] focus-within:ring-4 focus-within:ring-[var(--color-brand)]/10 transition-all`}>
         <div className="flex items-center gap-2 pl-4 pr-2 py-2">
           <Search size={18} className="text-slate-400 shrink-0" aria-hidden />
           <input

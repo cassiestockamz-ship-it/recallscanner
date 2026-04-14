@@ -73,6 +73,19 @@ export default function GuideShell({
     ],
   };
 
+  // Speakable spec — lets Google Assistant / Search Generative read the
+  // guide's headline + lede paragraph out loud on voice surfaces.
+  const speakableLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    url: `https://www.recallscanner.com/guides/${slug}`,
+    name: title,
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["[data-speakable='guide-title']", "[data-speakable='guide-lede']"],
+    },
+  };
+
   return (
     <>
       <script
@@ -82,6 +95,10 @@ export default function GuideShell({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableLd) }}
       />
       <article className="max-w-3xl mx-auto px-4 py-10 md:py-14">
         {/* Breadcrumb */}
@@ -102,10 +119,16 @@ export default function GuideShell({
               <Clock size={11} /> {readingTime}
             </span>
           </div>
-          <h1 className="text-[34px] md:text-[46px] leading-[1.04] font-bold tracking-tight text-slate-900 mb-4">
+          <h1
+            className="text-[34px] md:text-[46px] leading-[1.04] font-bold tracking-tight text-slate-900 mb-4"
+            data-speakable="guide-title"
+          >
             {title}
           </h1>
-          <p className="text-[17px] md:text-[19px] text-slate-600 leading-snug max-w-[60ch]">
+          <p
+            className="text-[17px] md:text-[19px] text-slate-600 leading-snug max-w-[60ch]"
+            data-speakable="guide-lede"
+          >
             {lede}
           </p>
         </header>

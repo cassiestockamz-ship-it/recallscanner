@@ -3,11 +3,11 @@ import { ShieldCheck } from "lucide-react";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+    <header className="vt-header sticky top-0 z-50 border-b border-[var(--color-border)] bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link
           href="/"
-          className="group flex items-center gap-2 font-bold text-[17px] text-slate-900"
+          className="vt-header-logo group flex items-center gap-2 font-bold text-[17px] text-slate-900"
         >
           <span className="w-7 h-7 grid place-items-center rounded-lg bg-[var(--color-brand)] text-white group-hover:scale-105 transition-transform">
             <ShieldCheck size={16} strokeWidth={2.5} />

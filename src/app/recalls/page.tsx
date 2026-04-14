@@ -32,7 +32,10 @@ export default function RecallsIndex() {
       </header>
 
       {/* VIN shortcut */}
-      <section className="rounded-3xl border border-[var(--color-border)] bg-white p-6 md:p-7 mb-10">
+      <section
+        data-vin-hero
+        className="rounded-3xl border border-[var(--color-border)] bg-white p-6 md:p-7 mb-10"
+      >
         <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
           Check a specific vehicle
         </div>

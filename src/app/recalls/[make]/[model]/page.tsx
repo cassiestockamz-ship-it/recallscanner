@@ -75,11 +75,26 @@ export default async function ModelPage({ params }: Props) {
     description: `Check all safety recalls for the ${make} ${modelDisplay}. Free NHTSA recall lookup.`,
   };
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.recallscanner.com/" },
+      { "@type": "ListItem", position: 2, name: "All Brands", item: "https://www.recallscanner.com/recalls" },
+      { "@type": "ListItem", position: 3, name: make, item: `https://www.recallscanner.com/recalls/${makeParam}` },
+      { "@type": "ListItem", position: 4, name: modelDisplay, item: `https://www.recallscanner.com/recalls/${makeParam}/${modelParam}` },
+    ],
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
       {/* Breadcrumb */}
@@ -101,7 +116,10 @@ export default async function ModelPage({ params }: Props) {
       />
 
       {/* VIN checker — directly under the hero, tool-first */}
-      <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-6">
+      <div
+        data-vin-hero
+        className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-6"
+      >
         <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
           Check your specific {modelDisplay}
         </div>

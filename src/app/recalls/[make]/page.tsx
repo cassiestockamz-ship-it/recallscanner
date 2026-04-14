@@ -55,8 +55,22 @@ export default async function MakePage({ params }: Props) {
 
   const otherBrands = POPULAR_MAKES.filter((m) => m !== make).slice(0, 8);
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.recallscanner.com/" },
+      { "@type": "ListItem", position: 2, name: "All Brands", item: "https://www.recallscanner.com/recalls" },
+      { "@type": "ListItem", position: 3, name: `${make} Recalls`, item: `https://www.recallscanner.com/recalls/${slug}` },
+    ],
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="text-[12px] text-slate-400 mb-6 font-medium">
         <Link href="/recalls" className="hover:text-[var(--color-brand)]">All Brands</Link>
@@ -90,8 +104,11 @@ export default async function MakePage({ params }: Props) {
         </p>
       </header>
 
-      {/* VIN checker — TOOL FIRST */}
-      <section className="rounded-3xl border border-[var(--color-border)] bg-white p-6 md:p-7 mb-10">
+      {/* VIN checker — tool-first, tagged for sticky bar observation */}
+      <section
+        data-vin-hero
+        className="rounded-3xl border border-[var(--color-border)] bg-white p-6 md:p-7 mb-10"
+      >
         <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
           Check your specific {make}
         </div>
