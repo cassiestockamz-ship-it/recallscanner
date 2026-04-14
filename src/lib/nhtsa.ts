@@ -1,4 +1,9 @@
-const BASE = "https://api.nhtsa.gov";
+// Two distinct NHTSA API hosts:
+//   - vPIC (vehicle identification): vpic.nhtsa.dot.gov/api
+//   - Recall API:                    api.nhtsa.gov
+// We use each for its own endpoints — mixing them up returns 403.
+const VPIC_BASE = "https://vpic.nhtsa.dot.gov/api";
+const RECALL_BASE = "https://api.nhtsa.gov";
 
 export interface Recall {
   NHTSACampaignNumber: string;
@@ -118,29 +123,49 @@ export function formatDate(raw: string): string {
 export async function getRecallsByVin(vin: string): Promise<{ recalls: Recall[]; apiError: boolean }> {
   try {
     const res = await fetch(
-      `${BASE}/recalls/recallsByVehicle?make=&model=&modelYear=&campaignNumber=&vin=${encodeURIComponent(vin)}`,
+      `${RECALL_BASE}/recalls/recallsByVehicle?make=&model=&modelYear=&campaignNumber=&vin=${encodeURIComponent(vin)}`,
       { next: { revalidate: 86400 } }
     );
-    if (!res.ok) return { recalls: [], apiError: true };
-    const data = await res.json();
-    return { recalls: data.results ?? [], apiError: false };
+    // NHTSA's recall API is quirky: it returns HTTP 400 even on success
+    // (with Count:0 and a "Results returned successfully" message) when a
+    // VIN has no recalls. We have to parse the body regardless of status
+    // and only treat as an error if the JSON itself is missing/invalid.
+    let data: { results?: Recall[]; Count?: number; Message?: string } | null = null;
+    try {
+      data = await res.json();
+    } catch {
+      return { recalls: [], apiError: true };
+    }
+    if (!data || !Array.isArray(data.results)) {
+      // 5xx or truly malformed
+      if (res.status >= 500) return { recalls: [], apiError: true };
+      return { recalls: [], apiError: false };
+    }
+    return { recalls: data.results, apiError: false };
   } catch {
     return { recalls: [], apiError: true };
   }
 }
 
 export async function decodeVin(vin: string): Promise<VinDecode | null> {
-  const res = await fetch(
-    `${BASE}/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`,
-    { next: { revalidate: 86400 } }
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  const result = data.Results?.[0];
-  if (!result) return null;
-  // ErrorCode "0" means success; anything else means decode failed
-  if (result.ErrorCode && result.ErrorCode !== "0") return null;
-  return result;
+  try {
+    const res = await fetch(
+      `${VPIC_BASE}/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`,
+      { next: { revalidate: 86400 } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const result = data.Results?.[0];
+    if (!result) return null;
+    // ErrorCode "0" means success. NHTSA can return multi-part codes like
+    // "1,4" (partial decodes) — we still keep those as "known enough" as
+    // long as Make is populated.
+    const code = String(result.ErrorCode ?? "").split(",")[0].trim();
+    if (code && code !== "0" && !result.Make) return null;
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 export async function getRecallsByMakeModelYear(
@@ -148,13 +173,16 @@ export async function getRecallsByMakeModelYear(
   model: string,
   year: string
 ): Promise<Recall[]> {
-  const res = await fetch(
-    `${BASE}/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`,
-    { next: { revalidate: 86400 } }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.results ?? [];
+  try {
+    const res = await fetch(
+      `${RECALL_BASE}/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`,
+      { next: { revalidate: 86400 } }
+    );
+    const data = await res.json();
+    return Array.isArray(data?.results) ? data.results : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getComplaintsByMakeModelYear(
@@ -162,13 +190,16 @@ export async function getComplaintsByMakeModelYear(
   model: string,
   year: string
 ): Promise<Complaint[]> {
-  const res = await fetch(
-    `${BASE}/complaints/complaintsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`,
-    { next: { revalidate: 86400 } }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.results ?? [];
+  try {
+    const res = await fetch(
+      `${RECALL_BASE}/complaints/complaintsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`,
+      { next: { revalidate: 86400 } }
+    );
+    const data = await res.json();
+    return Array.isArray(data?.results) ? data.results : [];
+  } catch {
+    return [];
+  }
 }
 
 // Get models with recalls for a make across recent years
@@ -179,13 +210,18 @@ export async function getModelsForMake(make: string): Promise<{ model: string; y
   const seen = new Set<string>();
 
   const fetches = years.map(async (year) => {
-    const res = await fetch(
-      `${BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
-      { next: { revalidate: 86400 } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.results ?? []).map((r: { model: string }) => ({ model: r.model, year: String(year) }));
+    try {
+      const res = await fetch(
+        `${RECALL_BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
+        { next: { revalidate: 86400 } }
+      );
+      const data = await res.json();
+      return Array.isArray(data?.results)
+        ? data.results.map((r: { model: string }) => ({ model: r.model, year: String(year) }))
+        : [];
+    } catch {
+      return [];
+    }
   });
 
   const allResults = await Promise.all(fetches);
@@ -211,13 +247,18 @@ export async function getRecentRecallsForMake(make: string): Promise<Recall[]> {
 
   const modelSets = await Promise.all(
     years.map(async (year) => {
-      const res = await fetch(
-        `${BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
-        { next: { revalidate: 86400 } }
-      );
-      if (!res.ok) return [];
-      const data = await res.json();
-      return (data.results ?? []).map((r: { model: string }) => ({ model: r.model, year: String(year) }));
+      try {
+        const res = await fetch(
+          `${RECALL_BASE}/products/vehicle/models?make=${encodeURIComponent(make)}&modelYear=${year}&issueType=r`,
+          { next: { revalidate: 86400 } }
+        );
+        const data = await res.json();
+        return Array.isArray(data?.results)
+          ? data.results.map((r: { model: string }) => ({ model: r.model, year: String(year) }))
+          : [];
+      } catch {
+        return [];
+      }
     })
   );
 

@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { POPULAR_MAKES, makeSlug, unslug } from "@/lib/nhtsa";
-import { getModelsForMake, getRecallsForModel, getComplaintsForModel, getModelReliability } from "@/lib/db";
+import {
+  getModelsForMake,
+  getRecallsForModel,
+  getComplaintsForModel,
+  getModelReliability,
+} from "@/lib/db";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
-import RecallList from "@/components/RecallList";
-import EmailCapture from "@/components/EmailCapture";
+import RecallBuckets from "@/components/RecallBuckets";
+import ModelSeverityHeader from "@/components/ModelSeverityHeader";
 import ModelEditorial from "@/components/ModelEditorial";
 
 interface Props {
@@ -22,8 +27,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!make) return {};
   const modelDisplay = unslug(modelParam).toUpperCase();
 
-  // Noindex very thin model pages so search engines don't index near-empty records.
-  // The page still renders for direct visitors / VIN cross-links, it just won't be indexed.
   const [recalls, complaints] = await Promise.all([
     getRecallsForModel(makeParam, modelParam),
     getComplaintsForModel(makeParam, modelParam),
@@ -32,8 +35,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${make} ${modelDisplay} Recalls — Safety Recalls & Complaints`,
-    description: `All safety recalls and NHTSA complaints for the ${make} ${modelDisplay}. Check by VIN, see affected years, components, and free repair details.`,
-    alternates: { canonical: `https://www.recallscanner.com/recalls/${makeParam}/${modelParam}` },
+    description: `All safety recalls, complaint data, and RecallScore severity rating for the ${make} ${modelDisplay}. Check by VIN.`,
+    alternates: {
+      canonical: `https://www.recallscanner.com/recalls/${makeParam}/${modelParam}`,
+    },
     ...(isThin ? { robots: { index: false, follow: true } } : {}),
   };
 }
@@ -47,44 +52,19 @@ export default async function ModelPage({ params }: Props) {
 
   const allModels = await getModelsForMake(makeParam);
   const matchingModel = allModels.find((m) => m.model_slug === modelParam);
-
   if (!matchingModel) notFound();
 
   const modelDisplay = matchingModel.model;
 
-  // Single Supabase query each -- no more 10+ NHTSA API calls
   const [recalls, complaints, reliability] = await Promise.all([
     getRecallsForModel(makeParam, modelParam),
     getComplaintsForModel(makeParam, modelParam),
     getModelReliability(makeParam, modelParam),
   ]);
 
-  // Soft-404 prevention: don't render thin pages with no real data.
+  // Soft-404 prevention
   if (recalls.length === 0 && complaints.length === 0) notFound();
 
-  // Compute a simple reliability score (10 = best, 1 = worst)
-  // Based on recall count and complaint severity
-  function computeScore() {
-    if (!reliability) return null;
-    let score = 10;
-    // Deduct for recalls (heavy penalty)
-    if (reliability.recallCount > 40) score -= 4;
-    else if (reliability.recallCount > 20) score -= 3;
-    else if (reliability.recallCount > 10) score -= 2;
-    else if (reliability.recallCount > 5) score -= 1;
-    // Deduct for crashes/fires
-    if (reliability.crashes > 10 || reliability.fires > 5) score -= 2;
-    else if (reliability.crashes > 3 || reliability.fires > 1) score -= 1;
-    // Deduct for deaths
-    if (reliability.deaths > 0) score -= 1;
-    // Deduct for high complaint volume
-    if (reliability.complaintCount > 100) score -= 2;
-    else if (reliability.complaintCount > 30) score -= 1;
-    return Math.max(1, Math.min(10, score));
-  }
-  const reliabilityScore = computeScore();
-
-  // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -96,68 +76,23 @@ export default async function ModelPage({ params }: Props) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
+    <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
       {/* Breadcrumb */}
-      <nav className="text-sm text-slate-400 mb-6">
-        <Link href="/recalls" className="hover:text-brand">All Brands</Link>
+      <nav className="text-[12px] text-slate-400 mb-6 font-medium">
+        <Link href="/recalls" className="hover:text-[var(--color-brand)]">All Brands</Link>
         <span className="mx-2">/</span>
-        <Link href={`/recalls/${makeParam}`} className="hover:text-brand">{make}</Link>
+        <Link href={`/recalls/${makeParam}`} className="hover:text-[var(--color-brand)]">{make}</Link>
         <span className="mx-2">/</span>
         <span className="text-slate-700">{modelDisplay}</span>
       </nav>
 
-      <h1 className="text-3xl font-bold mb-2">
-        {make} {modelDisplay} Safety Recalls
-      </h1>
-      <p className="text-slate-500 mb-8">
-        {recalls.length} recall campaign{recalls.length !== 1 ? "s" : ""} found.
-        {complaints.length > 0 &&
-          ` Plus ${complaints.length.toLocaleString()} owner complaints.`}
-      </p>
-
-      {/* Reliability scorecard */}
-      {reliability && reliabilityScore !== null && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
-          <div className="bg-white border border-border rounded-lg p-4 text-center">
-            <div className={`text-2xl font-bold ${reliabilityScore >= 7 ? "text-safe" : reliabilityScore >= 4 ? "text-amber-500" : "text-danger"}`}>
-              {reliabilityScore}/10
-            </div>
-            <div className="text-xs text-slate-500">Recall Score</div>
-          </div>
-          <div className="bg-white border border-border rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-slate-700">{reliability.recallCount}</div>
-            <div className="text-xs text-slate-500">Recalls</div>
-          </div>
-          <div className="bg-white border border-border rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-slate-700">{reliability.complaintCount.toLocaleString()}</div>
-            <div className="text-xs text-slate-500">Complaints</div>
-          </div>
-          <div className="bg-white border border-border rounded-lg p-4 text-center">
-            <div className={`text-2xl font-bold ${reliability.crashes > 0 ? "text-danger" : "text-safe"}`}>{reliability.crashes}</div>
-            <div className="text-xs text-slate-500">Crash Reports</div>
-          </div>
-          <div className="bg-white border border-border rounded-lg p-4 text-center">
-            <div className={`text-2xl font-bold ${reliability.fires > 0 ? "text-danger" : "text-safe"}`}>{reliability.fires}</div>
-            <div className="text-xs text-slate-500">Fire Reports</div>
-          </div>
-        </div>
-      )}
-
-      {/* VIN checker */}
-      <div className="bg-blue-50 rounded-lg p-6 mb-10">
-        <h2 className="font-semibold text-lg mb-3">
-          Check Your {make} {modelDisplay} by VIN
-        </h2>
-        <VinChecker />
-      </div>
-
-      {/* Editorial analysis — unique per model, derived from live data */}
-      <ModelEditorial
+      {/* Severity header — the hero */}
+      <ModelSeverityHeader
         make={make}
         modelDisplay={modelDisplay}
         recalls={recalls}
@@ -165,9 +100,26 @@ export default async function ModelPage({ params }: Props) {
         reliability={reliability}
       />
 
-      {/* Interactive recall list with year filtering */}
+      {/* VIN checker — directly under the hero, tool-first */}
+      <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-6">
+        <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
+          Check your specific {modelDisplay}
+        </div>
+        <h2 className="text-[18px] font-bold text-slate-900 mb-3">
+          Is your VIN affected?
+        </h2>
+        <VinChecker compact />
+      </div>
+
+      {/* Recall buckets */}
       <div className="mt-10">
-        <RecallList
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-[22px] font-bold text-slate-900">All Recalls</h2>
+          <span className="text-[12px] text-slate-400">
+            {recalls.length} campaign{recalls.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        <RecallBuckets
           recalls={recalls}
           complaints={complaints}
           make={make}
@@ -175,16 +127,37 @@ export default async function ModelPage({ params }: Props) {
         />
       </div>
 
-      {/* Email capture */}
-      <div className="my-10">
-        <EmailCapture vehicleName={`${make} ${modelDisplay}`} variant="banner" />
-      </div>
+      {/* Editorial analysis — collapsed, still in DOM for SEO/AdSense */}
+      <details className="mt-10 rounded-2xl border border-[var(--color-border)] bg-white group">
+        <summary className="cursor-pointer list-none px-5 py-4 flex items-center gap-3">
+          <span className="inline-block w-4 text-center text-slate-400 transition-transform group-open:rotate-90">
+            ›
+          </span>
+          <div className="flex-1">
+            <div className="font-semibold text-slate-900 text-[15px]">
+              Full analysis — how to read the {make} {modelDisplay} recall history
+            </div>
+            <div className="text-[12px] text-slate-500">
+              Year range, common components, complaint patterns, and how to use this page.
+            </div>
+          </div>
+        </summary>
+        <div className="px-5 pb-5">
+          <ModelEditorial
+            make={make}
+            modelDisplay={modelDisplay}
+            recalls={recalls}
+            complaints={complaints}
+            reliability={reliability}
+          />
+        </div>
+      </details>
 
-      {/* Related models cross-links */}
+      {/* Related models */}
       {allModels.length > 1 && (
-        <div className="mt-8 pt-8 border-t border-border">
-          <h2 className="text-lg font-bold mb-4">Other {make} Models</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="mt-12 pt-8 border-t border-[var(--color-border)]">
+          <h2 className="text-[16px] font-bold text-slate-900 mb-4">Other {make} Models</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {allModels
               .filter((m) => m.model_slug !== modelParam)
               .slice(0, 8)
@@ -192,9 +165,9 @@ export default async function ModelPage({ params }: Props) {
                 <Link
                   key={m.model}
                   href={`/recalls/${makeParam}/${m.model_slug}`}
-                  className="bg-white border border-border rounded-lg p-3 text-center text-sm font-medium text-slate-600 hover:border-brand hover:text-brand transition-colors"
+                  className="rounded-xl border border-[var(--color-border)] bg-white p-3 text-center text-[13px] font-medium text-slate-600 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors"
                 >
-                  {make} {m.model}
+                  {m.model}
                 </Link>
               ))}
           </div>

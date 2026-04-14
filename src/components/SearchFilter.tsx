@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Search, X, ArrowRight } from "lucide-react";
 
 interface Item {
   label: string;
@@ -15,7 +16,11 @@ interface Props {
   columns?: string;
 }
 
-export default function SearchFilter({ items, placeholder, columns = "grid-cols-2 sm:grid-cols-3 md:grid-cols-4" }: Props) {
+export default function SearchFilter({
+  items,
+  placeholder,
+  columns = "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
+}: Props) {
   const [query, setQuery] = useState("");
 
   const filtered = query
@@ -24,38 +29,66 @@ export default function SearchFilter({ items, placeholder, columns = "grid-cols-
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="relative max-w-md mb-5">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full max-w-sm px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand placeholder:text-slate-400"
+          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-[var(--color-border)] bg-white text-[14px] outline-none focus:border-[var(--color-brand)] focus:ring-4 focus:ring-[var(--color-brand)]/10 transition-all"
         />
         {query && (
-          <span className="ml-3 text-xs text-slate-400">
-            {filtered.length} of {items.length} shown
-          </span>
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+            aria-label="Clear search"
+          >
+            <X size={16} />
+          </button>
         )}
       </div>
-      <div className={`grid ${columns} gap-3`}>
+      {query && (
+        <div className="text-[12px] text-slate-400 mb-3">
+          {filtered.length} of {items.length} shown
+        </div>
+      )}
+      <div className={`grid ${columns} gap-2`}>
         {filtered.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="bg-white border border-border rounded-lg p-4 hover:border-brand transition-colors group"
+            className="group rounded-xl border border-[var(--color-border)] bg-white p-3.5 hover:border-[var(--color-brand)] transition-colors"
           >
-            <div className="font-medium text-slate-800 group-hover:text-brand transition-colors">
-              {item.label}
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-semibold text-slate-900 text-[14px] group-hover:text-[var(--color-brand)] transition-colors truncate">
+                  {item.label}
+                </div>
+                {item.subtitle && (
+                  <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                    {item.subtitle}
+                  </div>
+                )}
+              </div>
+              <ArrowRight
+                size={14}
+                className="text-slate-300 group-hover:text-[var(--color-brand)] group-hover:translate-x-0.5 transition-all shrink-0"
+              />
             </div>
-            <div className="text-xs text-slate-400 mt-1">{item.subtitle || "View recalls →"}</div>
           </Link>
         ))}
       </div>
       {query && filtered.length === 0 && (
-        <div className="text-center py-8 text-slate-400 text-sm">
+        <div className="text-center py-10 text-slate-400 text-[13px]">
           No matches for &quot;{query}&quot;.{" "}
-          <button onClick={() => setQuery("")} className="text-brand hover:underline cursor-pointer">
+          <button
+            onClick={() => setQuery("")}
+            className="text-[var(--color-brand)] hover:underline cursor-pointer"
+          >
             Clear search
           </button>
         </div>

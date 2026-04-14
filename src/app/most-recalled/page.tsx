@@ -1,21 +1,25 @@
 import Link from "next/link";
-import { POPULAR_MAKES, makeSlug, nhtsaRecallUrl, formatDate } from "@/lib/nhtsa";
+import { ArrowRight } from "lucide-react";
+import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
 import { getRecentRecallsAll } from "@/lib/db";
 import type { Metadata } from "next";
-import EmailCapture from "@/components/EmailCapture";
+import RecallCard from "@/components/RecallCard";
+import { scoreRecall } from "@/lib/severity";
 
 export const metadata: Metadata = {
-  title: "Most Recalled Vehicles — Recent Safety Recalls Across All Brands",
+  title: "Latest Vehicle Recalls — Across All Brands",
   description:
-    "See the latest vehicle safety recalls across all major brands. Updated daily with data from NHTSA. Ford, Toyota, Honda, Chevrolet, and more.",
+    "The newest safety recalls across every major vehicle brand, severity-scored and plain-English. Updated daily from NHTSA.",
   alternates: { canonical: "https://www.recallscanner.com/most-recalled" },
 };
 
 export const revalidate = 3600;
 
 export default async function MostRecalledPage() {
-  // Single Supabase query -- no more 10 parallel NHTSA calls
-  const recentRecalls = await getRecentRecallsAll(50);
+  const recentRecalls = await getRecentRecallsAll(60);
+  const scored = recentRecalls
+    .map((r) => ({ recall: r, severity: scoreRecall(r) }))
+    .sort((a, b) => b.severity.score - a.severity.score);
 
   // Count by make
   const makeCounts = new Map<string, number>();
@@ -26,75 +30,81 @@ export default async function MostRecalledPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
+  const totalCrit = scored.filter((s) => s.severity.tier === "crit").length;
+  const totalWatch = scored.filter((s) => s.severity.tier === "watch").length;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-2">Most Recalled Vehicles</h1>
-      <p className="text-slate-500 mb-8">
-        The latest safety recalls across all major vehicle brands. Updated daily from NHTSA.
-      </p>
+    <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
+      {/* Header */}
+      <header className="mb-10">
+        <div className="text-[11px] uppercase tracking-[0.12em] font-bold text-slate-500 mb-2">
+          Latest from NHTSA · Updated daily
+        </div>
+        <h1 className="text-[36px] md:text-[48px] leading-[1.02] font-bold tracking-tight text-slate-900 mb-2">
+          Latest Vehicle Recalls
+        </h1>
+        <p className="text-slate-600 text-[16px] max-w-[58ch] leading-snug">
+          The newest safety campaigns across every major brand, severity-scored so you can see the important ones at a glance.
+          {totalCrit > 0 && (
+            <>
+              {" · "}
+              <span className="text-[var(--color-crit)] font-semibold">{totalCrit} critical</span>
+            </>
+          )}
+          {totalWatch > 0 && (
+            <>
+              {" · "}
+              <span className="text-[var(--color-watch-ink)] font-semibold">{totalWatch} watch</span>
+            </>
+          )}
+        </p>
+      </header>
 
-      {/* Brand recall counts */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
-        {topMakes.map(([make, count]) => (
-          <Link
-            key={make}
-            href={`/recalls/${makeSlug(make)}`}
-            className="bg-white border border-border rounded-lg p-3 text-center hover:border-brand transition-colors group"
-          >
-            <div className="font-bold text-lg text-brand">{count}</div>
-            <div className="text-xs text-slate-500 group-hover:text-brand transition-colors">{make}</div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Email capture */}
-      <div className="mb-10">
-        <EmailCapture variant="banner" />
-      </div>
-
-      {/* Recent recalls */}
-      <h2 className="text-2xl font-bold mb-4">Latest Recalls</h2>
-      <div className="space-y-4 mb-12">
-        {recentRecalls.slice(0, 30).map((r) => (
-          <div key={r.NHTSACampaignNumber} className="bg-white border border-border rounded-lg p-5">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <a
-                href={nhtsaRecallUrl(r.NHTSACampaignNumber)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-mono bg-slate-100 text-brand px-2 py-0.5 rounded hover:bg-blue-50 transition-colors"
-              >
-                {r.NHTSACampaignNumber} ↗
-              </a>
-              <span className="text-xs text-slate-400">{formatDate(r.ReportReceivedDate)}</span>
-              <Link
-                href={`/recalls/${makeSlug(r.Make)}`}
-                className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-              >
-                {r.Make}
-              </Link>
-              <span className="text-xs bg-slate-50 text-slate-500 px-2 py-0.5 rounded">
-                {r.ModelYear} {r.Model}
-              </span>
-            </div>
-            <div className="text-sm font-medium text-slate-700 mb-1">{r.Component}</div>
-            <p className="text-sm text-slate-500 leading-relaxed">{r.Summary}</p>
-            {r.Consequence && (
-              <div className="mt-2 text-sm">
-                <span className="font-medium text-danger">Risk:</span>{" "}
-                <span className="text-slate-600">{r.Consequence}</span>
+      {/* Top brands tiles */}
+      <section className="mb-12">
+        <h2 className="text-[16px] font-bold text-slate-900 mb-4">Most active brands</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 md:gap-3">
+          {topMakes.map(([make, count]) => (
+            <Link
+              key={make}
+              href={`/recalls/${makeSlug(make)}`}
+              className="group rounded-xl border border-[var(--color-border)] bg-white p-3 hover:border-[var(--color-brand)] transition-colors"
+            >
+              <div className="text-[22px] font-bold text-[var(--color-brand)] tabular-nums">{count}</div>
+              <div className="text-[12px] text-slate-500 group-hover:text-[var(--color-brand)] transition-colors">
+                {make} recall{count === 1 ? "" : "s"}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-      {/* Browse all brands */}
-      <div className="bg-surface rounded-lg p-6 text-center">
-        <h2 className="font-semibold text-lg mb-2">Browse All Brands</h2>
-        <p className="text-sm text-slate-500 mb-4">Check recalls for any vehicle manufacturer.</p>
-        <Link href="/recalls" className="text-brand font-medium hover:underline">
-          View all {POPULAR_MAKES.length} brands &rarr;
+      {/* Latest recalls list */}
+      <section className="mb-12">
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-[22px] font-bold text-slate-900">Newest campaigns</h2>
+          <span className="text-[12px] text-slate-400">severity-sorted</span>
+        </div>
+        <div className="space-y-3">
+          {scored.slice(0, 30).map(({ recall }, i) => (
+            <RecallCard
+              key={recall.NHTSACampaignNumber}
+              recall={recall}
+              deferPaint={i > 2}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Browse all */}
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
+        <h2 className="font-bold text-slate-900 text-[16px] mb-1">Browse all {POPULAR_MAKES.length} brands</h2>
+        <p className="text-[13px] text-slate-500 mb-4">Check recalls for any vehicle manufacturer.</p>
+        <Link
+          href="/recalls"
+          className="inline-flex items-center gap-1.5 text-[var(--color-brand)] font-semibold hover:underline"
+        >
+          See all brands <ArrowRight size={14} />
         </Link>
       </div>
     </div>

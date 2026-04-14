@@ -1,16 +1,45 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Brand */
   --color-brand: #1e40af;
   --color-brand-light: #3b82f6;
+
+  /* Severity tiers (Calm Emergency palette — restrained, OKLCH-sourced) */
+  --color-crit: #d9342b;          /* oklch(0.62 0.22 28) — Action Needed / red */
+  --color-crit-soft: #fff1f1;     /* card wash */
+  --color-crit-ink: #8b1a15;      /* accessible text on soft */
+  --color-crit-ring: #fecaca;     /* border */
+
+  --color-watch: #c27803;         /* oklch(0.68 0.16 75) — Watch / amber */
+  --color-watch-soft: #fffaed;
+  --color-watch-ink: #7a4a00;
+  --color-watch-ring: #fcd34d;
+
+  --color-clear: #17803a;         /* oklch(0.56 0.16 145) — All Clear / green */
+  --color-clear-soft: #f0fdf4;
+  --color-clear-ink: #0f5025;
+  --color-clear-ring: #bbf7d0;
+
+  /* Legacy aliases (still used in existing components) */
   --color-danger: #dc2626;
   --color-danger-light: #fef2f2;
   --color-safe: #16a34a;
   --color-safe-light: #f0fdf4;
   --color-warning: #d97706;
   --color-warning-light: #fffbeb;
+
+  /* Neutrals */
   --color-surface: #f8fafc;
+  --color-surface-hi: #ffffff;
   --color-border: #e2e8f0;
+  --color-border-hi: #cbd5e1;
+  --color-ink: #0f172a;
+  --color-ink-2: #334155;
+  --color-ink-3: #64748b;
+  --color-ink-4: #94a3b8;
+
+  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -18,5 +47,86 @@
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
   background: #ffffff;
-  color: #1e293b;
+  color: #0f172a;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* ————————————————————————————————————————————————
+   Severity ribbon (the atomic card trick)
+   3px top stripe per card, colored by tier.
+   ———————————————————————————————————————————————— */
+.ribbon-crit  { box-shadow: inset 0 3px 0 0 var(--color-crit); }
+.ribbon-watch { box-shadow: inset 0 3px 0 0 var(--color-watch); }
+.ribbon-clear { box-shadow: inset 0 3px 0 0 var(--color-clear); }
+
+/* ————————————————————————————————————————————————
+   Micro-interactions
+   ———————————————————————————————————————————————— */
+@keyframes rs-pulse-once {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+.animate-pulse-once {
+  animation: rs-pulse-once 0.7s cubic-bezier(0.32, 0.72, 0, 1) 1;
+}
+
+@keyframes rs-slot-fill {
+  from { background: transparent; color: var(--color-ink-4); }
+  to   { background: var(--color-brand); color: #fff; }
+}
+
+@keyframes rs-shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-4px); }
+  40%     { transform: translateX(4px); }
+  60%     { transform: translateX(-3px); }
+  80%     { transform: translateX(3px); }
+}
+.animate-shake { animation: rs-shake 0.3s ease-in-out 1; }
+
+@keyframes rs-caret {
+  0%,49%  { opacity: 1; }
+  50%,100% { opacity: 0; }
+}
+.animate-caret { animation: rs-caret 1s steps(1) infinite; }
+
+@keyframes rs-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: rs-fade-up 0.45s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+@keyframes rs-score-sweep {
+  from { stroke-dashoffset: 283; }
+}
+.animate-score-sweep { animation: rs-score-sweep 0.9s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+/* Typewriter caret */
+.vin-caret::after {
+  content: "|";
+  margin-left: 1px;
+  color: var(--color-brand);
+  animation: rs-caret 1s steps(1) infinite;
+}
+
+/* Reduced motion: kill everything opinionated */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-once,
+  .animate-shake,
+  .animate-fade-up,
+  .animate-score-sweep,
+  .vin-caret::after {
+    animation: none !important;
+  }
+  * { transition-duration: 0.01ms !important; }
+}
+
+/* ————————————————————————————————————————————————
+   content-visibility: auto — massive win on model pages
+   with long recall lists. Use on every card below the fold.
+   ———————————————————————————————————————————————— */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
 }
