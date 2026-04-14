@@ -198,13 +198,18 @@ export function scoreRecall(r: Recall): RecallSeverity {
   if (flags.fireRisk) badges.push("FIRE RISK");
   if (flags.crashRisk && !flags.doNotDrive) badges.push("CRASH RISK");
 
+  // Prefer the cached AI-generated hook from Supabase (written by the
+  // translate-recalls batch script and the daily VPS ingest pipeline).
+  // Fall back to the rule-based regex rewrite of NHTSA's consequence text
+  // when no cached hook exists (e.g. brand-new recalls not yet translated).
+  const cached = r.PlainEnglishHook?.trim();
   return {
     tier,
     score,
     badges,
     category,
     icon,
-    hook: writeHook(r, category, flags),
+    hook: cached && cached.length > 5 ? cached : writeHook(r, category, flags),
   };
 }
 

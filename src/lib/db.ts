@@ -49,6 +49,7 @@ export interface DbRecall {
   remedy: string | null;
   report_date: string | null;
   notes: string | null;
+  plain_english_hook: string | null;
 }
 
 export interface DbComplaint {
@@ -85,6 +86,7 @@ function toRecall(r: DbRecall): Recall {
     Remedy: r.remedy ?? "",
     ReportReceivedDate: r.report_date ?? "",
     Notes: r.notes ?? "",
+    PlainEnglishHook: r.plain_english_hook ?? undefined,
   };
 }
 
@@ -119,7 +121,7 @@ export async function getModelsForMake(makeSlugVal: string): Promise<DbModel[]> 
 export async function getRecentRecallsForMake(makeSlugVal: string, limit = 30): Promise<Recall[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&order=report_date.desc&limit=${limit}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes`
+    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&order=report_date.desc&limit=${limit}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
   return rows.map(toRecall);
 }
@@ -128,7 +130,7 @@ export async function getRecentRecallsForMake(makeSlugVal: string, limit = 30): 
 export async function getRecallsForModel(makeSlugVal: string, modelSlugVal: string): Promise<Recall[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&model_slug=eq.${encodeURIComponent(modelSlugVal)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes`
+    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&model_slug=eq.${encodeURIComponent(modelSlugVal)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
   return rows.map(toRecall);
 }
@@ -146,7 +148,7 @@ export async function getComplaintsForModel(makeSlugVal: string, modelSlugVal: s
 export async function getRecentRecallsAll(limit = 30): Promise<Recall[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `order=report_date.desc&limit=${limit}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes`
+    `order=report_date.desc&limit=${limit}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
   return rows.map(toRecall);
 }
@@ -284,7 +286,7 @@ export async function getRecallsForMonth(month: number, year: number): Promise<R
   const pattern = `/${monthStr}/${year}`;
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `report_date=like.*${encodeURIComponent(pattern)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes`
+    `report_date=like.*${encodeURIComponent(pattern)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
   return rows.map(toRecall);
 }

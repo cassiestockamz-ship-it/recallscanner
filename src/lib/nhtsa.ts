@@ -17,6 +17,8 @@ export interface Recall {
   Remedy: string;
   ReportReceivedDate: string;
   Notes: string;
+  /** AI-generated plain-English one-sentence hook, cached at pipeline ingest time. */
+  PlainEnglishHook?: string;
 }
 
 export interface Complaint {

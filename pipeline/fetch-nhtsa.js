@@ -24,6 +24,128 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 const BASE = "https://api.nhtsa.gov";
 
+// ── Plain-English hook generator ──────────────────────────────
+// Runs after NHTSA fetch to translate any newly-ingested recalls that
+// don't have a plain_english_hook yet. Uses Claude Haiku 4.5 with a
+// one-sentence-max safety hook style. Graceful no-op if ANTHROPIC_API_KEY
+// is not set in the VPS env.
+
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const HOOK_MODEL = "claude-haiku-4-5-20251001";
+const HOOK_SYSTEM = `You rewrite official US vehicle recall text into a single plain-English safety hook for a consumer-facing website. The reader is a scared parent trying to decide if their car is safe to drive to school tomorrow.
+
+STYLE RULES
+1. One sentence. Maximum 18 words.
+2. Active voice. The subject should be the thing the reader cares about: their airbag, their brakes, their fuel pump, their steering wheel.
+3. Say what can HAPPEN to the driver, not what the defect IS.
+4. If the consequence mentions fire, crash, injury, or death, convey that severity clearly.
+5. If NHTSA issued a Do-Not-Drive advisory, start the hook with "Stop driving.".
+6. If flagged Park-Outside, convey the fire-while-parked risk clearly.
+7. Never invent information the source text does not support.
+
+BANNED WORDS: delve, utilize, facilitate, multifaceted, pivotal, myriad, plethora, foster, harness, bolster, cornerstone, leverage, actionable, moreover, furthermore, additionally, nevertheless, consequently, subsequently, hence, ultimately, essentially, nuanced, landscape, realm, paradigm, tapestry, embark, spearhead, underscore.
+
+BANNED PHRASES: "may result in", "can lead to", "increases the risk of", "the potential for", "it is important to note", "under certain circumstances", "in certain conditions", "is designed to".
+
+BANNED PUNCTUATION: No em dashes (—). No semicolons. Use periods and commas.
+
+OUTPUT: Return ONLY the single rewritten sentence. No preamble, no quotes, no explanation.`;
+
+function sanitizeHook(text) {
+  let t = (text || "").replace(/—/g, ",").replace(/;/g, ".").trim();
+  t = t.replace(/^["'""']+|["'""']+$/g, "").trim();
+  if (t && !/[.!?]$/.test(t)) t += ".";
+  return t.replace(/\s+/g, " ");
+}
+
+async function callClaude(recall, attempt = 0) {
+  const userPrompt =
+    `Input:\nSummary: ${recall.summary || "(none)"}\n` +
+    `Consequence: ${recall.consequence || "(none)"}\n` +
+    (recall.remedy ? `Remedy: ${recall.remedy}\n` : "") +
+    (recall.notes ? `Notes: ${recall.notes}\n` : "") +
+    `\nOutput:`;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: HOOK_MODEL,
+        max_tokens: 120,
+        system: [
+          { type: "text", text: HOOK_SYSTEM, cache_control: { type: "ephemeral" } },
+        ],
+        messages: [{ role: "user", content: userPrompt }],
+      }),
+    });
+    if (res.status === 429 || res.status === 529) {
+      if (attempt < 5) {
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        return callClaude(recall, attempt + 1);
+      }
+      throw new Error(`Rate limited: ${res.status}`);
+    }
+    if (!res.ok) throw new Error(`Anthropic ${res.status}`);
+    const data = await res.json();
+    return sanitizeHook(data.content?.[0]?.text || "");
+  } catch (err) {
+    if (attempt < 3 && /ENOTFOUND|ETIMEDOUT|ECONNRESET|fetch failed/.test(String(err))) {
+      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      return callClaude(recall, attempt + 1);
+    }
+    throw err;
+  }
+}
+
+async function translateNewRecalls() {
+  if (!ANTHROPIC_API_KEY) {
+    console.log("Hook translation: ANTHROPIC_API_KEY not set, skipping.");
+    return { translated: 0, failed: 0, skipped: true };
+  }
+  const { data: rows, error } = await db
+    .from("nhtsa_recalls")
+    .select("id,campaign_number,make,model,summary,consequence,remedy,notes")
+    .is("plain_english_hook", null)
+    .limit(500);
+  if (error) {
+    console.error(`Hook fetch failed: ${error.message}`);
+    return { translated: 0, failed: 0, skipped: false };
+  }
+  if (!rows || rows.length === 0) {
+    console.log("Hook translation: nothing new to translate.");
+    return { translated: 0, failed: 0, skipped: false };
+  }
+  console.log(`\nTranslating ${rows.length} new recalls with ${HOOK_MODEL}…`);
+
+  let ok = 0, failed = 0;
+  const queue = rows.slice();
+  const worker = async () => {
+    while (queue.length > 0) {
+      const r = queue.shift();
+      if (!r) break;
+      try {
+        const hook = await callClaude(r);
+        if (hook && hook.length > 5) {
+          await db.from("nhtsa_recalls").update({ plain_english_hook: hook }).eq("id", r.id);
+          ok++;
+        } else {
+          failed++;
+        }
+      } catch (err) {
+        failed++;
+        console.error(`  ${r.campaign_number}: ${err.message}`);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 8 }, worker));
+  console.log(`Hook translation: ${ok} ok, ${failed} failed.`);
+  return { translated: ok, failed, skipped: false };
+}
+
 // ── Config ──────────────────────────────────────────────────
 
 const POPULAR_MAKES = [
@@ -289,12 +411,23 @@ async function main() {
     if (rCount) dbRecalls = rCount;
   } catch {}
 
+  // Translate any newly-ingested recalls into plain-English hooks.
+  // Graceful no-op if ANTHROPIC_API_KEY is not set in the VPS env.
+  const hookResult = await translateNewRecalls();
+
   const status = errors.length > 0 ? "partial" : "completed";
+
+  const hookLine = hookResult.skipped
+    ? `Hooks: skipped (no API key)`
+    : hookResult.translated === 0 && hookResult.failed === 0
+    ? `Hooks: nothing new to translate`
+    : `Hooks: ${hookResult.translated} translated${hookResult.failed > 0 ? `, ${hookResult.failed} failed` : ""}`;
 
   const summary = [
     `*NHTSA Pipeline ${status === "completed" ? "Complete" : "Partial"}* (${elapsed} min)`,
     `Brands: ${makesToProcess.length} | Models: ${totalModels} new | Recalls: ${totalRecalls} new`,
     `DB totals: ${dbModels} models, ${dbRecalls} recalls`,
+    hookLine,
     errors.length > 0 ? `Errors: ${errors.map((e) => e.make).join(", ")}` : "All brands OK",
   ].join("\n");
 
