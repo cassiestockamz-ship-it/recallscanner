@@ -3,7 +3,7 @@ import { getRecallsByYear, getRecallsByBrand, getRecallsByComponent, getMostReca
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Vehicle Recall Trends — Data & Statistics",
+  title: "Vehicle Recall Trends · Data & Statistics",
   description:
     "Explore vehicle recall trends across years, brands, and components. See which manufacturers have the most recalls and what parts fail most often. Updated daily from NHTSA data.",
   alternates: { canonical: "https://www.recallscanner.com/trends" },

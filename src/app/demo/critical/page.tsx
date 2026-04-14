@@ -56,8 +56,7 @@ export default async function CriticalDemoPage() {
     <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
       {/* Demo banner */}
       <div className="mb-6 rounded-2xl border border-dashed border-[var(--color-border-hi)] bg-[var(--color-surface)] p-4 text-[12px] text-slate-500">
-        <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Demo</span>
-        {" — "}
+        <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mr-2">Demo</span>
         Rendered with the 6 worst real recalls from our Ford F-150 Supabase data so you can see the critical Safety Verdict state. Not indexable.
       </div>
 

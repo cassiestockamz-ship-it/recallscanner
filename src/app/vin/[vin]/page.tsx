@@ -14,7 +14,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { vin } = await params;
   return {
-    title: `VIN ${vin} — Recall Check`,
+    title: `VIN ${vin} · Recall Check`,
     description: `Recall check results for VIN ${vin}. Full safety verdict and all open NHTSA recalls.`,
     robots: { index: false, follow: true },
     alternates: { canonical: "https://www.recallscanner.com/vin" },
@@ -165,7 +165,7 @@ export default async function VinPage({ params }: Props) {
                     to see past campaigns for this model.
                   </li>
                 )}
-                <li>Check back periodically — new recalls land daily.</li>
+                <li>Check back periodically. New recalls land daily.</li>
               </ul>
             </div>
           )}
@@ -262,7 +262,7 @@ function ApiErrorState({ vin }: { vin: string }) {
           </h1>
           <p className="text-[14px] text-slate-600 leading-relaxed">
             We couldn't reach the NHTSA recall database to check <span className="font-mono font-medium">{vin}</span>.
-            This does <strong>not</strong> mean your vehicle has no recalls — we just can't confirm right now.
+            This does <strong>not</strong> mean your vehicle has no recalls. We just can't confirm right now.
             Try again in a few minutes, or check directly at{" "}
             <a
               href="https://www.nhtsa.gov/recalls"

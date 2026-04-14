@@ -100,7 +100,7 @@ export default function ModelEditorial({ make, modelDisplay, recalls, complaints
           {minYear && maxYear && minYear !== maxYear ? (
             <>, with campaigns reported to NHTSA between {minYear} and {maxYear}</>
           ) : null}
-          . Not every model year carries every recall — each campaign is scoped to a specific year range and often a specific build
+          . Not every model year carries every recall. Each campaign is scoped to a specific year range and often a specific build
           window, which is why a VIN lookup is the only way to know whether a particular {modelDisplay} is actually affected by any
           of these campaigns.
         </p>
@@ -114,8 +114,8 @@ export default function ModelEditorial({ make, modelDisplay, recalls, complaints
           {fires > 0 ? <> <strong className="text-slate-800">{fires} fire {fires === 1 ? "report" : "reports"}</strong></> : null}
           {(crashes > 0 || fires > 0) && deaths > 0 ? ", and" : null}
           {deaths > 0 ? <> <strong className="text-slate-800">{deaths} {deaths === 1 ? "fatality" : "fatalities"}</strong></> : null}
-          . Complaint data is unverified and shouldn&apos;t be read as a blanket condemnation of the model — large production volumes
-          naturally produce more reports — but it is useful for spotting whether a specific defect has a serious real-world pattern
+          . Complaint data is unverified and shouldn&apos;t be read as a blanket condemnation of the model (large production volumes
+          naturally produce more reports), but it is useful for spotting whether a specific defect has a serious real-world pattern
           behind it.
         </p>
       )}
@@ -126,7 +126,7 @@ export default function ModelEditorial({ make, modelDisplay, recalls, complaints
           The safest path for an owner is to run your VIN through the checker above. A VIN query hits NHTSA&apos;s live API and tells
           you whether <em>your specific {modelDisplay}</em> has an open, unresolved recall. If you&apos;re researching a used {modelDisplay}
           before buying, use the recall list below to understand the model&apos;s full history, then check the seller&apos;s VIN to see
-          whether prior owners actually completed the free repairs — many don&apos;t, and unresolved recalls can linger for years.
+          whether prior owners actually completed the free repairs. Many don&apos;t, and unresolved recalls can linger for years.
         </p>
       </div>
 

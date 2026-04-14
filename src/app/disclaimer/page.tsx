@@ -32,7 +32,7 @@ export default function DisclaimerPage() {
           <p>
             The recall campaign data, VIN decoding, and owner-complaint data you see on RecallScanner is sourced from NHTSA&apos;s
             publicly available APIs and refreshed daily by our automated ingestion pipeline. We do not alter, edit, or filter the
-            underlying NHTSA records themselves — we reformat and categorize them so they&apos;re easier to read and search.
+            underlying NHTSA records themselves. We reformat and categorize them so they&apos;re easier to read and search.
           </p>
           <p className="mt-2">
             While we work to keep the data current, the Service is provided <strong>as is</strong>. Recall status can change at
@@ -41,8 +41,8 @@ export default function DisclaimerPage() {
             warranty, express or implied, that the information is accurate, complete, current, or fit for any particular purpose.
           </p>
           <p className="mt-2">
-            For anything safety-critical — buying a used vehicle, deciding whether to drive a car with a suspected defect, or
-            confirming a specific repair is covered — verify the information directly with{" "}
+            For anything safety-critical (buying a used vehicle, deciding whether to drive a car with a suspected defect, or
+            confirming a specific repair is covered), verify the information directly with{" "}
             <a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">
               nhtsa.gov/recalls
             </a>{" "}and the vehicle&apos;s manufacturer or an authorized dealer.
@@ -73,7 +73,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-xl font-semibold text-slate-800 mb-2">Editorial analysis</h2>
           <p>
-            Some pages on RecallScanner include original editorial analysis — for example, most-common-recall-category summaries,
+            Some pages on RecallScanner include original editorial analysis: for example, most-common-recall-category summaries,
             month-over-month commentary, or plain-language explanations of what a recall means. Those sections represent our own
             interpretation of the underlying NHTSA dataset at the time of writing and are clearly separated from the raw campaign
             records. They are not pronouncements from NHTSA or any automaker.

@@ -37,7 +37,7 @@ export default function AboutPage() {
         <p>
           The U.S. has one of the most comprehensive vehicle-safety data systems in the world, and almost none of it is
           presented in a way regular people want to use. NHTSA&apos;s own recall lookup works, but it&apos;s built for a small
-          set of use cases — one VIN at a time, one campaign at a time, with little cross-reference between models, brands, or
+          set of use cases: one VIN at a time, one campaign at a time, with little cross-reference between models, brands, or
           historical patterns. Dealer and insurer tools are closed. Third-party tools either gate the data behind a paywall or
           bury it under upsells.
         </p>
@@ -59,8 +59,8 @@ export default function AboutPage() {
             model year.
           </li>
           <li>
-            <strong>Owner-complaint context.</strong> Alongside recall data, we surface NHTSA complaint counts — including crash,
-            fire, injury, and death flags — so that a pattern forming in real-world reports is easier to notice.
+            <strong>Owner-complaint context.</strong> Alongside recall data, we surface NHTSA complaint counts (including crash,
+            fire, injury, and death flags) so that a pattern forming in real-world reports is easier to notice.
           </li>
           <li>
             <strong>Monthly recap reports.</strong> Every month we publish a plain-language summary of every recall NHTSA logged
@@ -68,7 +68,7 @@ export default function AboutPage() {
           </li>
           <li>
             <strong>Editorial explainers.</strong> On top of each brand and model page we add a human-written analysis layer
-            that describes what the underlying numbers actually mean — the three most common recall categories, the model years
+            that describes what the underlying numbers actually mean: the three most common recall categories, the model years
             affected, the model with the highest campaign count, and how to use the page responsibly.
           </li>
         </ul>
@@ -78,8 +78,8 @@ export default function AboutPage() {
           We keep the raw campaign records as NHTSA published them, minus obvious formatting cruft. When we add a written
           analysis layer, it&apos;s clearly separated from the raw records and is generated from the live dataset at
           publication time. We don&apos;t invent recalls, we don&apos;t pay for visibility, and we don&apos;t accept payment
-          from manufacturers to suppress or re-rank specific campaigns. The full details — data sources, refresh cadence, what
-          we calculate, and what we deliberately don&apos;t do — are on our{" "}
+          from manufacturers to suppress or re-rank specific campaigns. The full details (data sources, refresh cadence, what
+          we calculate, and what we deliberately don&apos;t do) are on our{" "}
           <Link href="/methodology" className="text-brand hover:underline">methodology page</Link>.
         </p>
 
@@ -102,7 +102,7 @@ export default function AboutPage() {
 
         <h2 className="text-xl font-semibold text-slate-800 mt-8">Corrections and contact</h2>
         <p>
-          If you spot an error on any page — a missing recall, a stale status, an incorrect editorial claim — please{" "}
+          If you spot an error on any page (a missing recall, a stale status, an incorrect editorial claim), please{" "}
           <Link href="/contact" className="text-brand hover:underline">contact us</Link> with the URL and what looks wrong. We
           review every correction request and update against the live NHTSA source.
         </p>

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const make = findMake(slug);
   if (!make) return {};
   return {
-    title: `${make} Recalls — All Safety Recalls for ${make} Vehicles`,
+    title: `${make} Recalls · All Safety Recalls for ${make} Vehicles`,
     description: `Complete list of ${make} safety recalls from NHTSA with severity ratings. Check your VIN, browse every model, and see which campaigns are still open.`,
     alternates: { canonical: `https://www.recallscanner.com/recalls/${slug}` },
   };
@@ -146,7 +146,7 @@ export default async function MakePage({ params }: Props) {
           </span>
           <div className="flex-1">
             <div className="font-semibold text-slate-900 text-[15px]">
-              Full analysis — what the NHTSA data shows about {make} recalls
+              Full analysis of {make} recall history
             </div>
             <div className="text-[12px] text-slate-500">
               Category breakdown, most-recalled model, year-over-year, severity context.

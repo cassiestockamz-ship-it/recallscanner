@@ -130,3 +130,72 @@ body {
   content-visibility: auto;
   contain-intrinsic-size: auto 180px;
 }
+
+/* ————————————————————————————————————————————————
+   Guide prose — long-form article body styling for
+   /guides/[slug] pages. Tight but readable, no Tailwind
+   typography plugin.
+   ———————————————————————————————————————————————— */
+.guide-prose {
+  color: var(--color-ink-2);
+  font-size: 16.5px;
+  line-height: 1.7;
+}
+.guide-prose > * + * { margin-top: 1.05em; }
+.guide-prose h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: 1.2;
+  margin-top: 2.2em;
+  margin-bottom: 0.6em;
+  letter-spacing: -0.01em;
+}
+.guide-prose h2:first-child { margin-top: 0; }
+.guide-prose h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-top: 1.8em;
+  margin-bottom: 0.5em;
+}
+.guide-prose p { margin: 0; }
+.guide-prose strong { color: var(--color-ink); font-weight: 600; }
+.guide-prose a {
+  color: var(--color-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in oklch, var(--color-brand) 30%, transparent);
+}
+.guide-prose a:hover {
+  text-decoration-color: var(--color-brand);
+}
+.guide-prose ul, .guide-prose ol {
+  padding-left: 1.4em;
+  margin: 1.05em 0;
+}
+.guide-prose ul { list-style: disc; }
+.guide-prose ol { list-style: decimal; }
+.guide-prose li + li { margin-top: 0.45em; }
+.guide-prose li::marker { color: var(--color-ink-4); }
+.guide-prose blockquote {
+  border-left: 3px solid var(--color-border-hi);
+  padding: 0.2em 0 0.2em 1.1em;
+  color: var(--color-ink-3);
+  font-style: italic;
+  margin: 1.3em 0;
+}
+.guide-prose .callout {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  margin: 1.5em 0;
+  font-size: 15px;
+}
+.guide-prose .callout-brand {
+  border-color: color-mix(in oklch, var(--color-brand) 40%, transparent);
+  background: color-mix(in oklch, var(--color-brand) 4%, white);
+}

@@ -50,7 +50,7 @@ export default function VinDecoderStrip({ vin, compact = false, showLabels = tru
             )}
           </span>
         ) : (
-          <span className="text-slate-300">Start typing — we&apos;ll decode your VIN as you go.</span>
+          <span className="text-slate-300">Start typing. We&apos;ll decode your VIN as you go.</span>
         )}
       </div>
 

@@ -1,28 +1,73 @@
 import Link from "next/link";
-import { ArrowRight, Database, ShieldCheck, Clock, Gauge } from "lucide-react";
+import {
+  ArrowRight,
+  Database,
+  ShieldCheck,
+  Clock,
+  Gauge,
+  BookOpen,
+  Scale,
+  GitCompare,
+  ListChecks,
+} from "lucide-react";
 import VinChecker from "@/components/VinChecker";
 import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
 
 const FAQS = [
   {
-    q: "What is a vehicle recall?",
-    a: "A vehicle recall is issued when a manufacturer or NHTSA determines that a vehicle, equipment, car seat, or tire creates an unreasonable safety risk or fails to meet minimum safety standards. The manufacturer must fix the problem at no cost to you.",
-  },
-  {
     q: "Where do I find my VIN?",
-    a: "Your 17-digit VIN can be found on your vehicle registration, insurance card, the driver's side dashboard (visible through the windshield), or on a sticker inside the driver's side door jamb.",
+    a: "Your 17-character VIN is on your vehicle registration, insurance card, the lower-left corner of the windshield (visible from outside), or on a sticker inside the driver's-side door jamb.",
   },
   {
     q: "How much does a recall repair cost?",
     a: "Nothing. By law, manufacturers must repair recalled vehicles for free, regardless of whether you're the original owner or the vehicle is out of warranty.",
   },
   {
-    q: "What should I do if my car has a recall?",
-    a: "Contact your nearest authorized dealership to schedule the recall repair. You don't need an appointment at the dealership where you purchased the vehicle — any authorized dealer for your vehicle's brand can perform the repair.",
+    q: "Do recalls expire?",
+    a: "No. There is no statute of limitations on a recall remedy for passenger vehicles. A campaign from a decade ago is still redeemable today if nobody ever brought the car in.",
+  },
+  {
+    q: "Can any dealer do a recall repair?",
+    a: "Yes. Any dealer authorized to service your vehicle's brand can perform the recall repair and file for reimbursement from the manufacturer. You don't need to go back to where you bought the car.",
   },
   {
     q: "Where does RecallScanner get its data?",
-    a: "All recall data comes directly from the National Highway Traffic Safety Administration (NHTSA), the official U.S. government agency responsible for vehicle safety. Our database is updated daily.",
+    a: "All recall data comes directly from the National Highway Traffic Safety Administration (NHTSA), the official U.S. government agency responsible for vehicle safety. Our database is refreshed daily.",
+  },
+];
+
+const GUIDES = [
+  {
+    slug: "how-recalls-work",
+    eyebrow: "Primer",
+    title: "How vehicle recalls actually work",
+    teaser: "What triggers a recall, who pays, and why so many open campaigns linger for years.",
+    readingTime: "6 min",
+    icon: BookOpen,
+  },
+  {
+    slug: "your-rights",
+    eyebrow: "Rights",
+    title: "Your rights when a vehicle is recalled",
+    teaser: "Free repairs, any authorized dealer, loaners, and what federal law actually guarantees you.",
+    readingTime: "7 min",
+    icon: Scale,
+  },
+  {
+    slug: "vs-nhtsa",
+    eyebrow: "Methodology",
+    title: "RecallScanner vs NHTSA",
+    teaser: "NHTSA is the source of truth. We're the severity layer. Here's when to use which.",
+    readingTime: "5 min",
+    icon: GitCompare,
+  },
+  {
+    slug: "what-to-do",
+    eyebrow: "Action",
+    title: "What to do if you have an open recall",
+    teaser: "A five-step playbook from reading the campaign text to handling Do-Not-Drive notices.",
+    readingTime: "6 min",
+    icon: ListChecks,
   },
 ];
 
@@ -204,100 +249,60 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 text-center">
             <StatCard value="1,000+" label="Active recall campaigns tracked" />
             <StatCard value="29M+" label={`Vehicles recalled in ${currentYear - 1}`} />
-            <StatCard value="100%" label="Free — recalls are fixed at no cost" />
+            <StatCard value="100%" label="Free. Recalls are fixed at no cost" />
           </div>
         </div>
       </section>
 
-      {/* ── Educational — collapsed behind details ───────────── */}
-      <section className="py-14 bg-[var(--color-surface)]">
-        <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-center text-[22px] md:text-[26px] font-bold text-slate-900 mb-8">
-            The essentials, explained
-          </h2>
-          <div className="space-y-2">
-            <InfoDetails
-              title="What is a vehicle recall, really?"
-              body={
-                <>
-                  <p>
-                    A vehicle safety recall is a formal campaign opened by a manufacturer — sometimes voluntarily, sometimes after a federal investigation — to fix a defect that creates an unreasonable risk to safety or that fails to meet a federal motor vehicle safety standard. NHTSA oversees the process and keeps a public record of every campaign. When a recall is issued, the automaker has to notify owners and fix the problem at no cost, no matter whether the car was bought new, used, is inside its original warranty window, or decades past it.
-                  </p>
-                  <p>
-                    The thing most people get wrong is assuming "recall" is a single event — a letter in the mail, a trip to the dealer, a quick fix. In practice, most passenger vehicles on U.S. roads today have had at least one recall campaign over their lifetime, and a surprising number of those recalls are still <em>open</em> because the original owner either never got the notification, threw it out, or sold the car before the repair was scheduled.
-                  </p>
-                  <p>
-                    This matters most for used-car buyers and for people who&apos;ve had the same vehicle for five-plus years without ever looking. A recall doesn&apos;t expire. The only way to know the current status of a specific vehicle is to run the VIN through NHTSA&apos;s live database, which is exactly what the tool at the top of this page does.
-                  </p>
-                </>
-              }
-            />
-            <InfoDetails
-              title="Your rights when a vehicle is recalled"
-              body={
-                <>
-                  <p>
-                    Federal law — the National Traffic and Motor Vehicle Safety Act — gives you a number of rights when a car, truck, SUV, motorcycle, or piece of equipment is under an active recall:
-                  </p>
-                  <ul className="list-disc pl-5 space-y-1.5">
-                    <li>
-                      <strong className="text-slate-800">The repair is free.</strong> The manufacturer pays for parts, labor, and any reasonable associated costs, regardless of owner history or warranty status.
-                    </li>
-                    <li>
-                      <strong className="text-slate-800">Any authorized dealer can do it.</strong> You are not tied to where you bought the vehicle.
-                    </li>
-                    <li>
-                      <strong className="text-slate-800">You may be entitled to a loaner or refund.</strong> If the remedy isn&apos;t available, the automaker is generally required to provide transportation or a loaner.
-                    </li>
-                    <li>
-                      <strong className="text-slate-800">You have the right to know.</strong> Manufacturers must notify registered owners of record. If paperwork went astray, the live VIN lookup above is the backstop.
-                    </li>
-                    <li>
-                      <strong className="text-slate-800">Unresolved recalls don&apos;t disappear.</strong> A recall from 2012 is still redeemable today.
-                    </li>
-                  </ul>
-                </>
-              }
-            />
-            <InfoDetails
-              title="Why use RecallScanner instead of NHTSA directly?"
-              body={
-                <>
-                  <p>
-                    NHTSA&apos;s own recall site is the source of truth for recall data, and we recommend using it any time you&apos;re making a significant decision. RecallScanner doesn&apos;t replace it — we sit on top of the same government data and make certain workflows faster to read.
-                  </p>
-                  <ul className="list-disc pl-5 space-y-1.5">
-                    <li><strong className="text-slate-800">Severity-scored verdicts.</strong> Every recall gets a RecallScore (0–100) and a tier (critical / watch / lower-severity) so you can see the shape of a vehicle&apos;s history at a glance.</li>
-                    <li><strong className="text-slate-800">Plain-English hooks.</strong> We rewrite NHTSA&apos;s "this defect may result in" language into a one-line hook you can read in seconds.</li>
-                    <li><strong className="text-slate-800">Full model history on one page</strong>, with search and year filters.</li>
-                    <li><strong className="text-slate-800">Brand-level analysis</strong> of the most common recall categories, years, and affected models.</li>
-                    <li><strong className="text-slate-800">No login, no upsells, no tracking.</strong></li>
-                  </ul>
-                </>
-              }
-            />
-            <InfoDetails
-              title="What to do if your vehicle has an open recall"
-              body={
-                <ol className="list-decimal pl-5 space-y-2">
-                  <li>
-                    <strong className="text-slate-800">Read the full campaign text.</strong> Look at Consequence and Remedy on the recall card. They tell you what can go wrong and what the dealer will actually do to fix it.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800">Decide whether it&apos;s safe to drive.</strong> Some campaigns are "do not drive" or "park outside." Most are not. If uncertain, call the manufacturer&apos;s customer service line before your next drive.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800">Call any authorized dealer.</strong> Give them the campaign number and your VIN. They&apos;ll confirm parts and schedule the free repair.
-                  </li>
-                  <li>
-                    <strong className="text-slate-800">Ask about a loaner if parts are backordered.</strong>
-                  </li>
-                  <li>
-                    <strong className="text-slate-800">Keep the paperwork</strong> — it helps at resale.
-                  </li>
-                </ol>
-              }
-            />
+      {/* ── Guides — cards linking to long-form guide pages ───── */}
+      <section className="py-14 md:py-16 bg-[var(--color-surface)]">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex items-baseline justify-between mb-8">
+            <h2 className="text-[22px] md:text-[26px] font-bold text-slate-900">
+              The essentials
+            </h2>
+            <Link
+              href="/guides"
+              className="text-[13px] font-medium text-[var(--color-brand)] hover:underline inline-flex items-center gap-1"
+            >
+              All guides <ArrowRight size={13} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            {GUIDES.map((g) => {
+              const Icon = g.icon;
+              return (
+                <Link
+                  key={g.slug}
+                  href={`/guides/${g.slug}`}
+                  className="group relative rounded-2xl border border-[var(--color-border)] bg-white p-5 md:p-6 hover:border-[var(--color-brand)] transition-colors"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="shrink-0 w-11 h-11 rounded-xl grid place-items-center bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-brand)] group-hover:bg-[var(--color-brand)] group-hover:text-white transition-colors">
+                      <Icon size={18} strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.1em] font-bold text-slate-400 mb-1.5">
+                        <span>{g.eyebrow}</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock size={10} /> {g.readingTime}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 text-[16.5px] leading-snug mb-1.5 group-hover:text-[var(--color-brand)] transition-colors">
+                        {g.title}
+                      </h3>
+                      <p className="text-[13.5px] text-slate-500 leading-relaxed">
+                        {g.teaser}
+                      </p>
+                      <div className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-brand)] opacity-0 group-hover:opacity-100 transition-opacity">
+                        Read guide <ArrowRight size={12} />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -349,18 +354,3 @@ function StatCard({ value, label }: { value: string; label: string }) {
   );
 }
 
-function InfoDetails({ title, body }: { title: string; body: React.ReactNode }) {
-  return (
-    <details className="rounded-2xl border border-[var(--color-border)] bg-white group">
-      <summary className="cursor-pointer list-none px-5 py-4 flex items-center gap-3 font-semibold text-slate-900 text-[15px]">
-        <span className="inline-block w-4 text-center text-slate-400 transition-transform group-open:rotate-90">
-          ›
-        </span>
-        {title}
-      </summary>
-      <div className="px-5 pb-5 pl-12 space-y-3 text-slate-600 text-[14.5px] leading-relaxed">
-        {body}
-      </div>
-    </details>
-  );
-}

@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isThin = recalls.length < 3 && complaints.length < 20;
 
   return {
-    title: `${make} ${modelDisplay} Recalls — Safety Recalls & Complaints`,
+    title: `${make} ${modelDisplay} Recalls · Safety Recalls & Complaints`,
     description: `All safety recalls, complaint data, and RecallScore severity rating for the ${make} ${modelDisplay}. Check by VIN.`,
     alternates: {
       canonical: `https://www.recallscanner.com/recalls/${makeParam}/${modelParam}`,
@@ -135,7 +135,7 @@ export default async function ModelPage({ params }: Props) {
           </span>
           <div className="flex-1">
             <div className="font-semibold text-slate-900 text-[15px]">
-              Full analysis — how to read the {make} {modelDisplay} recall history
+              Full analysis: how to read the {make} {modelDisplay} recall history
             </div>
             <div className="text-[12px] text-slate-500">
               Year range, common components, complaint patterns, and how to use this page.

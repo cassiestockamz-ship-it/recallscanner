@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     if (!supabaseUrl || !supabaseKey) {
       // Fallback: log to console if Supabase not configured yet
-      console.log(`[EMAIL SIGNUP] ${email} — vehicle: ${vehicle || "none"}`);
+      console.log(`[EMAIL SIGNUP] ${email} · vehicle: ${vehicle || "none"}`);
       return NextResponse.json({ success: true });
     }
 

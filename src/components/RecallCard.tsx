@@ -115,7 +115,7 @@ export default function RecallCard({ recall, defaultOpen = false, className = ""
             </button>
           </div>
           <div className="text-right text-[11px] text-slate-400 font-mono shrink-0">
-            {formatDate(recall.ReportReceivedDate) || "—"}
+            {formatDate(recall.ReportReceivedDate) || "·"}
             {days != null && days > 0 && (
               <div className="text-slate-300 tabular-nums">{days} {days === 1 ? "day" : "days"} ago</div>
             )}

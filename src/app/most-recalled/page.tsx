@@ -7,7 +7,7 @@ import RecallCard from "@/components/RecallCard";
 import { scoreRecall } from "@/lib/severity";
 
 export const metadata: Metadata = {
-  title: "Latest Vehicle Recalls — Across All Brands",
+  title: "Latest Vehicle Recalls Across All Brands",
   description:
     "The newest safety recalls across every major vehicle brand, severity-scored and plain-English. Updated daily from NHTSA.",
   alternates: { canonical: "https://www.recallscanner.com/most-recalled" },

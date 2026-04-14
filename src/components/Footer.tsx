@@ -51,6 +51,9 @@ export default function Footer() {
               <Link href="/trends" className="hover:text-[var(--color-brand)] transition-colors">
                 Recall Trends
               </Link>
+              <Link href="/guides" className="hover:text-[var(--color-brand)] transition-colors">
+                Recall Guides
+              </Link>
               <Link href="/blog" className="hover:text-[var(--color-brand)] transition-colors">
                 Monthly Reports
               </Link>

@@ -321,8 +321,8 @@ export function verdict(recalls: Recall[]): VerdictResult {
     label = "ACTION NEEDED";
     sub =
       counts.doNotDrive > 0
-        ? `${counts.total} open recall${counts.total === 1 ? "" : "s"} — at least one is a Do-Not-Drive notice.`
-        : `${counts.total} open recall${counts.total === 1 ? "" : "s"} — at least one is critical.`;
+        ? `${counts.total} open recall${counts.total === 1 ? "" : "s"}. At least one is a Do-Not-Drive notice.`
+        : `${counts.total} open recall${counts.total === 1 ? "" : "s"}. At least one is critical.`;
   } else if (counts.watch > 0) {
     tier = "watch";
     label = "WATCH";

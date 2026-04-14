@@ -9,7 +9,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: {
-    default: "RecallScanner — Free Vehicle Recall Check by VIN",
+    default: "RecallScanner · Free Vehicle Recall Check by VIN",
     template: "%s | RecallScanner",
   },
   description:
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "RecallScanner",
-    title: "RecallScanner — Free Vehicle Recall Check",
+    title: "RecallScanner · Free Vehicle Recall Check",
     description: "Check if your car has any open safety recalls. Free VIN lookup powered by NHTSA data.",
   },
   robots: { index: true, follow: true },

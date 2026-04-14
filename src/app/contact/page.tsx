@@ -25,8 +25,8 @@ export default function ContactPage() {
             <a href="mailto:hello@recallscanner.com" className="text-brand hover:underline font-medium">hello@recallscanner.com</a>.
           </p>
           <p className="mt-2 text-xs text-slate-400">
-            We typically respond within 2–3 business days. For urgent safety concerns about your own vehicle, please contact
-            NHTSA or your manufacturer directly — we&apos;re an information publisher, not a safety response service.
+            We typically respond within 2 to 3 business days. For urgent safety concerns about your own vehicle, please contact
+            NHTSA or your manufacturer directly. We&apos;re an information publisher, not a safety response service.
           </p>
         </section>
 

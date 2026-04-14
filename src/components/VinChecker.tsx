@@ -87,7 +87,7 @@ export default function VinChecker({ compact = false, autoFocus = false }: Props
       return;
     }
     if (vin.length !== 17) {
-      setError(`VIN must be 17 characters — you have ${vin.length}.`);
+      setError(`VIN must be 17 characters. You have ${vin.length}.`);
       return;
     }
     if (!isValidVinFormat(vin)) {

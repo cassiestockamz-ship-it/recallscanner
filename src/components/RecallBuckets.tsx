@@ -14,7 +14,7 @@ interface Props {
 }
 
 const TIER_META: Record<Tier, { label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; color: string; description: string }> = {
-  crit:  { label: "Action needed", icon: AlertOctagon,   color: "var(--color-crit)",  description: "Urgent — schedule the free repair now." },
+  crit:  { label: "Action needed", icon: AlertOctagon,   color: "var(--color-crit)",  description: "Urgent. Schedule the free repair now." },
   watch: { label: "Watch",          icon: AlertTriangle,  color: "var(--color-watch)", description: "Schedule the free repair at your next service." },
   clear: { label: "Lower severity", icon: ShieldCheck,    color: "var(--color-clear)", description: "Still important, but not flagged critical." },
 };

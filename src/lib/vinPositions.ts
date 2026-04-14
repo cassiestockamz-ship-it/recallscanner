@@ -222,7 +222,7 @@ export function decodeWmi(vin: string): WmiInfo | null {
   // First-char country only
   const first = prefix[0];
   const country = countryFromFirstChar(first);
-  if (country) return { ...country, make: "—" };
+  if (country) return { ...country, make: "" };
   return null;
 }
 
@@ -287,7 +287,7 @@ export function livePartialDecode(raw: string): LivePartial {
   const parts: string[] = [];
   if (wmi) {
     parts.push(wmi.country);
-    if (wmi.make !== "—") parts.push(wmi.make);
+    if (wmi.make) parts.push(wmi.make);
   }
   if (year) parts.push(String(year));
   return {

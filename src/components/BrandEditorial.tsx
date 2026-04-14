@@ -98,7 +98,7 @@ export default function BrandEditorial({ make, recalls, modelCount }: Props) {
         <p>
           The {make} model with the highest count in our dataset right now is the <strong className="text-slate-800">{topModel[0]}</strong>,
           which appears in {topModel[1]} of the {recallCount} tracked campaigns. A high campaign count does not automatically mean a model
-          is unreliable — it often reflects higher production volume, longer time on the road, and more thorough NHTSA surveillance.
+          is unreliable. It often reflects higher production volume, longer time on the road, and more thorough NHTSA surveillance.
           What matters for your specific vehicle is whether any of those campaigns are still open against your VIN.
         </p>
       )}
@@ -117,7 +117,7 @@ export default function BrandEditorial({ make, recalls, modelCount }: Props) {
         <p>
           Roughly <strong className="text-slate-800">{seriousPct}%</strong> of the {make} recalls currently indexed here mention fire,
           crash, injury, death, or loss of vehicle control in the consequence language. That figure is not a measure of how dangerous
-          the brand is overall — every recall involves some safety concern by definition — but it is a useful signal that a given
+          the brand is overall (every recall involves some safety concern by definition), but it is a useful signal that a given
           campaign is worth resolving quickly rather than waiting until your next scheduled service.
         </p>
       )}
@@ -126,7 +126,7 @@ export default function BrandEditorial({ make, recalls, modelCount }: Props) {
         <h3 className="font-semibold text-slate-800 mb-2">How to use this page</h3>
         <p>
           If you already own a {make}, the fastest and most reliable answer comes from the VIN checker above. A VIN lookup queries
-          NHTSA&apos;s live recall API and tells you whether <em>your specific vehicle</em> has an open, unresolved campaign — which
+          NHTSA&apos;s live recall API and tells you whether <em>your specific vehicle</em> has an open, unresolved campaign, which
           is a stricter and more personal test than browsing the full model-level list. If you are researching a used {make} before
           buying, start with the model pages below to see the complete campaign history for that nameplate, then run the seller&apos;s
           VIN through the checker to confirm whether prior owners completed the free repairs or left them open.

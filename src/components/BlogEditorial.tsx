@@ -35,10 +35,10 @@ export default function BlogEditorial({ monthLabel, recalls, brandEntries, topCo
               , followed by <strong className="text-slate-800">{secondBrand[0]}</strong> at {secondBrand[1].length}
             </>
           )}
-          . A high campaign count for a single brand in a single month isn&apos;t inherently a quality signal — it often reflects
+          . A high campaign count for a single brand in a single month isn&apos;t inherently a quality signal. It often reflects
           a single defect rolled out across multiple model years or configurations, or proactive self-reporting after an internal
-          investigation. The more useful question for an owner is whether any of these campaigns actually apply to the specific
-          vehicle in your driveway, which depends on the VIN.
+          investigation. The more useful question for an owner is whether any of these campaigns actually apply to the vehicle
+          in your driveway, which depends on the VIN.
         </p>
       )}
 
@@ -57,7 +57,7 @@ export default function BlogEditorial({ monthLabel, recalls, brandEntries, topCo
           Of the {totalVehiclesLine} campaigns indexed for {monthLabel}, <strong className="text-slate-800">{criticalCount}{" "}
           ({criticalPct}%)</strong> contain language about fire, crash, injury, or death in the consequence field. Those are the
           campaigns we&apos;ve flagged as &quot;Most Critical&quot; below. A critical flag doesn&apos;t necessarily mean anything has
-          happened to the vehicles on the road — NHTSA often describes <em>potential</em> consequences in the same language — but
+          happened to the vehicles on the road (NHTSA often describes <em>potential</em> consequences in the same language), but
           it&apos;s a reasonable filter when you&apos;re prioritizing which open recall to schedule first.
         </p>
       )}

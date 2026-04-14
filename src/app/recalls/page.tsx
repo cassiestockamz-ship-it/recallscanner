@@ -27,7 +27,7 @@ export default function RecallsIndex() {
           Recalls by Brand
         </h1>
         <p className="text-slate-600 text-[16px] max-w-[58ch] leading-snug">
-          {POPULAR_MAKES.length} manufacturers tracked. Pick one to see every model with open campaigns — or skip the list and check a specific VIN below.
+          {POPULAR_MAKES.length} manufacturers tracked. Pick one to see every model with open campaigns, or skip the list and check a specific VIN below.
         </p>
       </header>
 

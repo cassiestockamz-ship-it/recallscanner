@@ -24,6 +24,9 @@ export default function Header() {
           <Link href="/trends" className="hidden sm:inline hover:text-[var(--color-brand)] transition-colors">
             Trends
           </Link>
+          <Link href="/guides" className="hidden sm:inline hover:text-[var(--color-brand)] transition-colors">
+            Guides
+          </Link>
           <Link href="/blog" className="hidden md:inline hover:text-[var(--color-brand)] transition-colors">
             Reports
           </Link>
