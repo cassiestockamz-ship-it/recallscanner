@@ -1,69 +1,115 @@
-# RecallScanner -- CLAUDE.md
+# RecallScanner — CLAUDE.md
 
-## What This Is
-Free vehicle recall lookup tool powered by official NHTSA data. Users search by VIN or browse recalls by make/model. All recall data is pre-fetched by a VPS pipeline into Supabase -- zero NHTSA API calls at render time for brand/model pages; VIN lookups hit NHTSA directly.
+## Thesis
+**The verdict layer on top of NHTSA.** Not a lookup tool — a severity-scored, plain-English, one-screen answer to "is my car dangerous right now?" NHTSA has the data but won't rank risk. CarFax charges. OEMs are single-brand. We sit on top of NHTSA's free public APIs and add the interpretation layer nobody else provides.
 
 ## Live URL
 https://recallscanner.com (canonical: www.recallscanner.com)
 
 ## Stack
-- Next.js 16.2.1 (App Router, TypeScript)
+- Next.js 16.2.1 (App Router, TypeScript, Turbopack)
 - React 19.2.4
-- Tailwind CSS 4
-- Supabase (REST API, no SDK on frontend -- SDK used in pipeline only)
-- NHTSA public API (VIN decode + VIN recall lookup)
-- Geist font (via next/font)
+- Tailwind CSS 4 (CSS-based config via `@theme inline` in globals.css)
+- Lucide React (icon system, tree-shaken imports)
+- Supabase (REST API only, no SDK on frontend — SDK used in the VPS pipeline)
+- NHTSA public APIs (VIN decode via vPIC, VIN recall lookup via Recall API, recalls/complaints by make/model via Recall API)
+- Geist font (sans + mono via `next/font`)
+- `experimental.viewTransition: true` in next.config.ts for native View Transitions across navigations
 
 ## Key Features
-- VIN recall checker (real-time NHTSA API lookup)
-- VIN decoder (make, model, year, engine, drivetrain details)
-- Browse recalls by brand (32 popular makes)
-- Browse recalls by make/model (dynamic routes, Supabase-backed)
-- Most-recalled vehicles page
-- Complaints data per model (crash, fire, injuries, deaths)
-- Email capture for recall alerts (per-vehicle or general)
-- Ad slot placeholders (not yet active)
-- FAQ with structured data (FAQPage, WebApplication, WebSite, SearchAction)
-- Dynamic sitemap (static pages + brand pages + all model pages from Supabase)
+
+### The verdict layer
+- **Live VIN decoder strip** — 17 mono slots above the VIN input that light up as the user types. Client-side WMI → country/make, check-digit validation, model-year-from-position-10 table, plant city. Pure client JS, ~3KB, zero network calls. See [`src/components/VinDecoderStrip.tsx`](src/components/VinDecoderStrip.tsx) and [`src/lib/vinPositions.ts`](src/lib/vinPositions.ts).
+- **Severity engine** — turns a raw NHTSA recall into `{ tier, score, badges, category, icon, hook }`. Tier is `crit | watch | clear`. Score is 0–100 weighted from consequence text (fire, crash, injury, Do-Not-Drive flags). Badges include `DO NOT DRIVE`, `PARK OUTSIDE`, `FIRE RISK`, `CRASH RISK`. Hook is a rule-based plain-English rewrite of NHTSA's formal "may result in" language. See [`src/lib/severity.ts`](src/lib/severity.ts).
+- **Safety Verdict Card** — the one-screen output on `/vin/[vin]`. Giant verdict word (ALL CLEAR / WATCH / ACTION NEEDED), severity-colored icon, RecallScore dial, four count tiles (critical / fire risk / crash risk / do-not-drive), vehicle name, VIN in mono, NHTSA hotline CTA, top recall promoted below with default-expanded detail. See [`src/components/SafetyVerdict.tsx`](src/components/SafetyVerdict.tsx).
+- **Recall buckets** — model pages group recalls by severity tier. Critical open by default, watch + clear collapsed. Year-pill filter, search-within-page, severity totals. Replaces a 22,843px flat scroll wall with ~4,000px of visible content. See [`src/components/RecallBuckets.tsx`](src/components/RecallBuckets.tsx).
+- **RecallCard** — the atomic unit. 3px severity ribbon on top, Lucide category icon, plain-English headline hook, campaign meta, severity badges, expand-on-tap detail. Used on `/vin/[vin]`, model pages, brand pages, `/most-recalled`, and `/demo/critical`. `content-visibility: auto` on below-fold cards for paint performance. See [`src/components/RecallCard.tsx`](src/components/RecallCard.tsx).
+
+### Tools
+- VIN recall checker (homepage hero, brand pages, model pages, /recalls index, all guide CTAs) — [`VinChecker.tsx`](src/components/VinChecker.tsx)
+- VIN decoder (live client-side + server-side via vPIC API)
+- Browse recalls by brand — [`/recalls`](src/app/recalls/page.tsx), [`/recalls/[make]`](src/app/recalls/[make]/page.tsx)
+- Model pages with severity header, reliability scorecard, year filter — [`/recalls/[make]/[model]`](src/app/recalls/[make]/[model]/page.tsx)
+- Most-recalled feed — [`/most-recalled`](src/app/most-recalled/page.tsx), severity-sorted
+- Recall trends dashboard — [`/trends`](src/app/trends/page.tsx), with Dataset schema
+- Monthly recall reports blog — [`/blog`](src/app/blog/page.tsx), auto-generated from DB
+
+### Long-form content (evergreen guides)
+- [`/guides`](src/app/guides/page.tsx) — hub with 2×2 card grid
+- [`/guides/how-recalls-work`](src/app/guides/how-recalls-work/page.tsx) — 6-min primer
+- [`/guides/your-rights`](src/app/guides/your-rights/page.tsx) — 7-min federal-rights walkthrough
+- [`/guides/vs-nhtsa`](src/app/guides/vs-nhtsa/page.tsx) — 5-min honest "when to use which" methodology guide
+- [`/guides/what-to-do`](src/app/guides/what-to-do/page.tsx) — 6-min 5-step action playbook (with HowTo schema)
+- All guides use [`GuideShell`](src/components/GuideShell.tsx) for breadcrumb, header, reading time, `.guide-prose` body, VIN CTA, and related-guide cross-links
+
+### Other
+- Sticky micro-VIN bar that slides in below the header once the user scrolls past the in-page VIN hero. Observed via `IntersectionObserver` on `[data-vin-hero]` elements. Hidden on `/vin/[vin]`. See [`src/components/StickyVinBar.tsx`](src/components/StickyVinBar.tsx).
+- Email capture for recall alerts (per-vehicle or general) — [`EmailCapture.tsx`](src/components/EmailCapture.tsx)
+- FAQ section on homepage with FAQPage + Speakable schema
+- Dynamic sitemap (static pages + brand pages + all model pages from Supabase + blog posts + guide pages)
 - Project Dash analytics tracking (inline script in layout.tsx)
+- Google AdSense script in head (approval pending as of 2026-04-13)
 - FlexOffers verification meta tag
+- Demo route [`/demo/critical`](src/app/demo/critical/page.tsx) — noindex preview of the ACTION NEEDED state, renders real F-150 recalls through SafetyVerdict
 
 ## Architecture
 
 ### Pages
-- `/` -- Hero with VIN checker, browse by brand, stats, FAQ
-- `/vin` -- Standalone VIN lookup page
-- `/vin/[vin]` -- VIN results page (decode + recalls)
-- `/recalls` -- All brands listing
-- `/recalls/[make]` -- Brand page with model grid + recent recalls
-- `/recalls/[make]/[model]` -- Model page with all recalls + complaints + reliability scorecard
-- `/most-recalled` -- Recent recalls across all makes
-- `/trends` -- Data visualizations: recalls by year, brand, component, most-recalled models
-- `/blog` -- Monthly recall report index
-- `/blog/[slug]` -- Individual monthly report (auto-generated from DB data)
-- `/about` -- About page
-- `/privacy` -- Privacy policy
+- `/` — Hero with VIN checker + live decoder strip, "How it works" 3-card grid, brand browser, stats, 2×2 Essentials card grid linking to guides, FAQ
+- `/vin` — Standalone VIN lookup page
+- `/vin/[vin]` — VIN results page with Safety Verdict Card, full VIN decode collapsed, remaining recalls, clean-report fallback
+- `/recalls` — All brands listing with VIN shortcut at top
+- `/recalls/[make]` — Brand page: severity counts, VIN checker (tool-first), "Most Urgent" section with top 3 critical recalls, model grid, recent recalls, collapsed editorial
+- `/recalls/[make]/[model]` — Model page: `ModelSeverityHeader` (RecallScore dial + count tiles), VIN checker, `RecallBuckets`, collapsed editorial, related models
+- `/most-recalled` — Latest recalls across all makes, severity-sorted, RecallCard-based
+- `/trends` — By year, by brand, by component, most-recalled models. Bar charts. Has Dataset schema.
+- `/blog` — Monthly recall report index (auto-generated)
+- `/blog/[slug]` — Individual monthly report (auto-generated from DB data)
+- `/guides` — Long-form guide hub
+- `/guides/[slug]` — 4 long-form evergreen guides (see above)
+- `/about`, `/methodology`, `/terms`, `/disclaimer`, `/contact`, `/privacy` — trust stack
+- `/demo/critical` — noindex demo of the critical verdict state
 
 ### API Endpoints
-- `POST /api/subscribe` -- Email capture, stores to `recall_subscribers` table in Supabase
+- `POST /api/subscribe` — Email capture, stores to `recall_subscribers` table in Supabase
 
 ### Data Layer (`src/lib/`)
-- `nhtsa.ts` -- NHTSA API functions (VIN decode, VIN recalls, make/model recalls), types, slug helpers, POPULAR_MAKES list
-- `nhtsa.ts` also has `formatDate()` utility for DD/MM/YYYY -> "Oct 31, 2024" conversion
-- `db.ts` -- Supabase REST queries for pre-fetched data (models, recalls, complaints, trends, reliability, blog). 1hr ISR revalidation. Maps DB rows to NHTSA-style interfaces. Uses `allRows=true` param for aggregate queries (bypasses 1000-row default).
+- [`nhtsa.ts`](src/lib/nhtsa.ts) — NHTSA API client (VIN decode via `vpic.nhtsa.dot.gov`, VIN recalls via `api.nhtsa.gov`, recalls/complaints by make/model). **Two distinct hosts** — mixing them up returns 403, and `recallsByVehicle` returns HTTP 400 on *success* with `Count:0`, so we parse the body regardless of status and only treat 5xx as real errors. Types, slug helpers, `POPULAR_MAKES`, `formatDate()`.
+- [`severity.ts`](src/lib/severity.ts) — pure-function severity engine. `scoreRecall()` per recall, `verdict()` aggregate over an array, `modelRecallScore()` weighted score from recalls + complaints + reliability. Zero LLM calls at render time.
+- [`vinPositions.ts`](src/lib/vinPositions.ts) — client-side VIN structural decoder. WMI table (~60 US-market codes), transliteration + weights for check-digit, position-10 year table (1980–2039), `livePartialDecode()` helper.
+- [`db.ts`](src/lib/db.ts) — Supabase REST queries for pre-fetched recall/complaint/model data. 1hr ISR revalidation. Maps DB rows to NHTSA-style interfaces. Uses `limit=10000` for aggregate queries (bypasses 1000-row default). Has `getRecallsForModel`, `getRecentRecallsForMake`, `getModelsForMake`, `getModelReliability`, `getRecallsByYear`, `getRecallsByBrand`, `getRecallsByComponent`, `getMostRecalledModels`, `getAllModels` (for sitemap), `getDistinctRecallMonths` (for blog), `getRecallsForMonth`.
 
 ### Components (`src/components/`)
-- `VinChecker.tsx` -- VIN input form (client component)
-- `RecallList.tsx` -- Recall results display
-- `SearchFilter.tsx` -- Search/filter for recall lists
-- `EmailCapture.tsx` -- Email subscribe form (client component, calls /api/subscribe)
-- `AdSlot.tsx` -- Placeholder ad slots (inactive)
-- `Header.tsx` -- Site header/nav
-- `Footer.tsx` -- Site footer
+- [`VinChecker.tsx`](src/components/VinChecker.tsx) — hero VIN input with typewriter placeholder (4 valid example VINs cycling), check-digit validation, loading state, autofocus option, compact variant
+- [`VinDecoderStrip.tsx`](src/components/VinDecoderStrip.tsx) — 17-slot live decoder on a 17-column CSS grid. Labels row uses matching `col-span` values (WMI 3 / VDS 5 / ✓ 1 / Year 1 / Plant 1 / Serial 6) so labels always align with slots at any viewport width.
+- [`SafetyVerdict.tsx`](src/components/SafetyVerdict.tsx) — VIN results hero, server component. Renders `ScoreDial`, tier-specific colors, count tiles, top-recall promotion.
+- [`ScoreDial.tsx`](src/components/ScoreDial.tsx) — pure SVG circular dial, CSS-only sweep animation, number inside is wrapped in `CountUp` for mount-time count-up animation
+- [`CountUp.tsx`](src/components/CountUp.tsx) — minimal requestAnimationFrame count-up with ease-out cubic, respects `prefers-reduced-motion`
+- [`RecallCard.tsx`](src/components/RecallCard.tsx) — the atomic unit, used everywhere. Severity ribbon, Lucide category icon, plain-English hook, badges, expand-on-tap detail, copy-campaign-number button
+- [`RecallBuckets.tsx`](src/components/RecallBuckets.tsx) — severity-bucketed recall list for model pages. Summary bar with totals, search, year pills, three collapsible tier sections (crit open by default)
+- [`ModelSeverityHeader.tsx`](src/components/ModelSeverityHeader.tsx) — model page hero with RecallScore dial, tier badge, 5 count tiles
+- [`GuideShell.tsx`](src/components/GuideShell.tsx) — shared chrome for every `/guides/[slug]` page. Article + BreadcrumbList + Speakable JSON-LD, breadcrumb, eyebrow + reading time + H1 + lede (with `data-speakable` attributes), body slot, VIN CTA, related-guide cross-links
+- [`StickyVinBar.tsx`](src/components/StickyVinBar.tsx) — slide-in sticky VIN bar mounted in layout.tsx
+- [`EmailCapture.tsx`](src/components/EmailCapture.tsx) — email subscribe form (client, calls `/api/subscribe`)
+- [`AdSlot.tsx`](src/components/AdSlot.tsx) — **currently not imported** (removed per AdSense recovery playbook; kept for post-approval re-add)
+- [`SafetyProductRec.tsx`](src/components/SafetyProductRec.tsx) — **currently not imported** (Amazon affiliate card, same story)
+- [`BrandEditorial.tsx`](src/components/BrandEditorial.tsx), [`ModelEditorial.tsx`](src/components/ModelEditorial.tsx), [`BlogEditorial.tsx`](src/components/BlogEditorial.tsx) — data-driven analysis layers. Live inside collapsed `<details>` blocks on brand/model pages.
+- [`SearchFilter.tsx`](src/components/SearchFilter.tsx) — shared grid search component
+- [`Header.tsx`](src/components/Header.tsx), [`Footer.tsx`](src/components/Footer.tsx) — site chrome. Header has `vt-header` + logo has `vt-header-logo` for View Transitions morphs.
+- [`RecallList.tsx`](src/components/RecallList.tsx) — **legacy**, kept but no longer imported by any page. RecallBuckets replaced it.
+
+### Design System
+- **Calm Emergency palette** in [`globals.css`](src/app/globals.css): three severity tiers (`--color-crit`, `--color-watch`, `--color-clear`) each with `-soft` (card wash), `-ink` (accessible text), `-ring` (border). Restrained red matching Apple Weather severe alerts. Dark-mode ready via OKLCH roots.
+- **Ribbon utility classes**: `.ribbon-crit`, `.ribbon-watch`, `.ribbon-clear` render a 3px top stripe via `box-shadow: inset`. Applied to `RecallCard` and `SafetyVerdict`.
+- **Micro-interactions**: `rs-pulse-once`, `rs-shake`, `rs-fade-up`, `rs-score-sweep`, `rs-caret`. All respect `prefers-reduced-motion`.
+- **`.cv-auto`** utility for `content-visibility: auto` on below-fold cards.
+- **`.guide-prose`** block for long-form article body styling (h2/h3/ul/ol/blockquote/callout).
+- **View Transitions**: named classes `vt-header`, `vt-header-logo`, `vt-vin-hero`, `vt-sticky-vin` give persistent chrome `view-transition-name` values so they morph between routes instead of hard-swapping.
+- **Iconography**: Lucide React. Category icons in the severity engine map to `shield-alert` (airbag), `disc-3` (brakes), `zap` (electrical), `cog` (engine), `navigation` (steering), `fuel`, `armchair` (seat), `cpu` (software), `lightbulb` (lighting), `wrench` (suspension), `circle-dot` (tires), `car-front` (body), `alert-triangle` (other).
 
 ### Pipeline (`pipeline/`)
-- `fetch-nhtsa.js` -- Fetches all recall/complaint/model data from NHTSA API, stores in Supabase. Runs daily on VPS via PM2 cron.
-- `ecosystem.config.cjs` -- PM2 configuration for the pipeline
+- `fetch-nhtsa.js` — Fetches all recall/complaint/model data from NHTSA API, stores in Supabase. Runs daily on VPS via PM2 cron.
+- `ecosystem.config.cjs` — PM2 configuration for the pipeline
 - Env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 - VPS path: loads from `/opt/shared/.env`
 
@@ -72,60 +118,64 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - Tracking site_id (Project Dash): `dea4c76d-7ba5-43a4-ab7e-16975ccc876f`
 - Subscribe site_id: `recallscanner` (string, used in recall_subscribers table)
 - Tables used:
-  - `nhtsa_recalls` -- All recalls by make/model (pre-fetched by pipeline)
-  - `nhtsa_complaints` -- All complaints by make/model (pre-fetched by pipeline)
-  - `nhtsa_models` -- Model index with slugs (pre-fetched by pipeline)
-  - `recall_subscribers` -- Email signups (site_id, email, vehicle, subscribed_at)
-  - `job_runs` -- Pipeline execution logging
+  - `nhtsa_recalls` — All recalls by make/model (pre-fetched by pipeline)
+  - `nhtsa_complaints` — All complaints by make/model (pre-fetched by pipeline)
+  - `nhtsa_models` — Model index with slugs (pre-fetched by pipeline)
+  - `recall_subscribers` — Email signups (site_id, email, vehicle, subscribed_at)
+  - `job_runs` — Pipeline execution logging
 
-## Email Capture
-- Component: `EmailCapture.tsx` (client-side form)
-- Endpoint: `POST /api/subscribe` with `{ email, vehicle }` body
-- Stores to `recall_subscribers` table with `site_id: "recallscanner"`
-- Handles duplicate emails gracefully (treats as success)
-- Falls back to console logging if Supabase env vars not set
+## Schema.org markup (what's emitted where)
+- **Homepage**: FAQPage (with Speakable), WebApplication, WebSite (with SearchAction pointing at `/vin/{vin}`)
+- **Brand page**: BreadcrumbList
+- **Model page**: WebApplication, BreadcrumbList
+- **VIN results**: BreadcrumbList
+- **Trends page**: Dataset (with NHTSA as sourceOrganization, CC0 license, temporal + spatial coverage, variableMeasured)
+- **Guide pages**: Article, BreadcrumbList, WebPage with SpeakableSpecification
+- **`/guides/what-to-do` specifically**: also emits HowTo schema with 5 HowToStep entries, supplies, tools, totalTime P1W, zero cost
+- **Root layout metadata**: OpenGraph, canonical, per-route dynamic OG images on brand pages
 
 ## Deployment
 - Vercel (hobby plan)
 - Deploy command: `source ~/.claude/tokens.env && "C:/Users/Amazon IRL/AppData/Roaming/npm/vercel.cmd" --prod --token $VERCEL_TOKEN --scope taylors-projects-6d8e0bd8 --yes`
 - GitHub: cassiestockamz-ship-it/recallscanner (private)
-- ISR: 1hr revalidation for Supabase queries, 24hr for NHTSA VIN lookups
+- ISR: 1hr revalidation for Supabase queries, 24hr for NHTSA API calls
+- `experimental.viewTransition: true` in next.config.ts
 
 ## Cloudflare
 - Zone: 877618c3c8ba8ad9b6b42cdfdf1cb130
-- Email: hello@recallscanner.com -> cassiestockamz@gmail.com (routing)
+- Email: hello@recallscanner.com → cassiestockamz@gmail.com (routing)
 
 ## Monetization
-- Google AdSense: ca-pub-7557739369186741 (script in layout.tsx `<head>`, added 2026-03-29, pending review)
-- FlexOffers: verification tag present (`fo-verify` meta in layout.tsx), awaiting approval
-- CJ Affiliate: applied, awaiting approval
-- **Amazon Associates:** tag `kawaiiguy0f-rs-20`, resqme escape tool (ASIN B000IE0EZO)
-  - Component: `SafetyProductRec.tsx` — clickable card with self-hosted product image (`/images/resqme.jpg`)
-  - Shows on: brand pages (`/recalls/[make]`), model pages (`/recalls/[make]/[model]`), VIN results (`/vin/[vin]`)
-  - FTC disclosure: inline on card + footer
-- Ad slot placeholders: `AdSlot.tsx` with 4 positions (between-results, sidebar, after-tool, after-results)
+- **Google AdSense**: ca-pub-7557739369186741 (script in layout.tsx `<head>`, added 2026-03-29, **approval pending**)
+- **FlexOffers**: verification tag present (`fo-verify` meta in layout.tsx), awaiting approval
+- **CJ Affiliate**: applied, awaiting approval
+- **Amazon Associates**: tag `kawaiiguy0f-rs-20`. Resqme escape tool product card **currently removed from all programmatic pages** per the AdSense recovery playbook (2026-04-13). Will be re-added to editorial hub pages post-approval.
+- **Ad slot placeholders**: removed from all pages per the AdSense recovery playbook. `AdSlot.tsx` still exists in the repo but is not imported.
 
 ## Monthly Blog Reports (Fully Automated)
-- Blog posts are 100% auto-generated from DB data -- zero code changes needed
+- Blog posts are 100% auto-generated from DB data — zero code changes needed for new months
 - Blog index (`/blog`) auto-discovers all months with recall data via `getDistinctRecallMonths()`
 - Blog posts (`/blog/[slug]`) parse slug format `[month]-[year]-vehicle-recalls` and query DB
-- New months appear automatically as the daily pipeline ingests new recall data
-- Sitemap also auto-includes all blog post URLs
+- Sitemap auto-includes all blog post URLs
 - Each post shows: recall count, brands affected, critical recalls, component breakdown, brand-by-brand details
 
-## Reliability Scores
-- Shown on model pages (`/recalls/[make]/[model]`) as a scorecard above the VIN checker
-- Score: 1-10 scale based on recall count, complaint volume, crash/fire/death reports
-- Data: computed from `getModelReliability()` in db.ts
+## Reliability Scores (legacy, soft-deprecated)
+- Shown on model pages as the old `reliability` tile set inside `ModelSeverityHeader`. Data is computed from `getModelReliability()` in db.ts. The `RecallScore` in the severity engine is the canonical severity number now; `reliability` is still used for feeding injury/death/crash/fire counts into `modelRecallScore()`.
 
 ## VPS Pipeline
 - Runs on DO VPS (198.199.91.55) via PM2 cron
-- Daily fetch of all 32 brands x 10 years of models, recalls, and complaints
-- Stores everything in Supabase so the site never hits NHTSA at render time (except VIN lookups)
+- Daily fetch of all 32 brands × 10 years of models, recalls, and complaints
+- Stores everything in Supabase so the site never hits NHTSA at render time (except VIN lookups, which are always live)
 - Telegram notifications on pipeline runs
 - Config: `pipeline/ecosystem.config.cjs`
 
+## Prose discipline (IMPORTANT)
+Every user-visible prose file on this site has been swept for AI tells using the banned-patterns list at `~/.claude/fiction-patterns/banned_patterns.md`. **Zero em dashes** and **zero banned words** (delve, utilize, leverage, ultimately, moreover, multifaceted, etc.) in user-visible prose. Code comments retain em dashes because they're dev-only. If you add new prose, keep it clean: use commas, colons, parentheses, or period breaks instead of em dashes.
+
 ## What to Read on Session Start
 - This CLAUDE.md
-- Memory: `government-data-apis-research.md`, `automotive-affiliate-research-2026.md`
-- `src/lib/db.ts` (data layer) and `src/lib/nhtsa.ts` (types + VIN functions)
+- Memory: `google-seo-master-strategy-2026.md`, `adsense-low-value-content-recovery-playbook.md`, `automotive-affiliate-research-2026.md`
+- [`src/lib/severity.ts`](src/lib/severity.ts) — the severity engine (the product thesis in code)
+- [`src/lib/db.ts`](src/lib/db.ts) — data layer
+- [`src/lib/nhtsa.ts`](src/lib/nhtsa.ts) — NHTSA API client (note the two-host gotcha)
+- [`src/app/globals.css`](src/app/globals.css) — design tokens, severity palette, View Transitions named classes
