@@ -12,9 +12,11 @@ interface Props {
 }
 
 /**
- * 17-slot live decoder. Renders above the VIN input and lights up as the
- * user types. Computes WMI / model year / check digit client-side with
- * zero network calls.
+ * 17-slot live decoder. Slots AND labels live on the same 17-column
+ * CSS grid so label spans (WMI 3, VDS 5, ✓ 1, Year 1, Plant 1, Serial 6)
+ * always line up exactly under the characters they describe.
+ *
+ * Zero network calls. WMI / model year / check digit computed client-side.
  */
 export default function VinDecoderStrip({ vin, compact = false, showLabels = true }: Props) {
   const live = useMemo(() => livePartialDecode(vin), [vin]);
@@ -22,13 +24,13 @@ export default function VinDecoderStrip({ vin, compact = false, showLabels = tru
   const padded = (vin.toUpperCase() + "                 ").slice(0, 17);
   const chars = padded.split("");
 
-  const slotBase = compact
-    ? "w-5 h-7 text-[11px]"
-    : "w-[22px] sm:w-[26px] md:w-[28px] h-9 sm:h-10 text-[13px] sm:text-[15px]";
+  // Grid template: 17 equal columns with a tight gap.
+  const gridCols = { gridTemplateColumns: "repeat(17, minmax(0, 1fr))" };
+  const slotHeight = compact ? "h-7 text-[11px]" : "h-9 sm:h-10 text-[13px] sm:text-[15px]";
 
   return (
     <div className="w-full">
-      {/* Description strip — "[US] USA · Ford · 2019" */}
+      {/* Description strip — e.g. "[US] USA · Ford · 2019" */}
       <div className="min-h-[22px] mb-2 text-[12px] font-medium text-slate-500 flex items-center gap-2">
         {live.description ? (
           <span className="inline-flex items-center gap-1.5 animate-fade-up">
@@ -54,8 +56,8 @@ export default function VinDecoderStrip({ vin, compact = false, showLabels = tru
         )}
       </div>
 
-      {/* 17 slots */}
-      <div className="flex items-center gap-[2px] sm:gap-1 font-mono" aria-hidden>
+      {/* 17-slot grid */}
+      <div className="grid gap-[2px] sm:gap-1 font-mono" style={gridCols} aria-hidden>
         {chars.map((ch, i) => {
           const meta = SLOT_META[i];
           const filled = ch.trim().length > 0;
@@ -80,7 +82,7 @@ export default function VinDecoderStrip({ vin, compact = false, showLabels = tru
           return (
             <div
               key={i}
-              className={`rounded-[5px] border grid place-items-center font-semibold transition-colors duration-150 ${slotBase} ${bg}`}
+              className={`rounded-[5px] border grid place-items-center font-semibold transition-colors duration-150 ${slotHeight} ${bg}`}
             >
               {filled ? ch : ""}
             </div>
@@ -88,15 +90,19 @@ export default function VinDecoderStrip({ vin, compact = false, showLabels = tru
         })}
       </div>
 
+      {/* Labels row — same 17-column grid with spans matching the segments */}
       {showLabels && (
-        <div className="hidden md:flex items-center gap-[2px] sm:gap-1 mt-1 text-[9px] uppercase tracking-wider text-slate-400 font-sans">
-          {/* Segment spans */}
-          <div className="w-[84px] text-center">WMI (Country + Maker)</div>
-          <div className="flex-1 text-center">Vehicle Descriptor</div>
-          <div className="w-[28px] text-center">✓</div>
-          <div className="w-[28px] text-center">Year</div>
-          <div className="w-[28px] text-center">Plant</div>
-          <div className="w-[180px] text-center">Serial</div>
+        <div
+          className="hidden md:grid gap-[2px] sm:gap-1 mt-1.5 text-[9px] uppercase tracking-wider text-slate-400 font-sans font-semibold"
+          style={gridCols}
+          aria-hidden
+        >
+          <div className="col-span-3 text-center">WMI</div>
+          <div className="col-span-5 text-center">Vehicle Descriptor</div>
+          <div className="col-span-1 text-center">✓</div>
+          <div className="col-span-1 text-center">Year</div>
+          <div className="col-span-1 text-center">Plant</div>
+          <div className="col-span-6 text-center">Serial</div>
         </div>
       )}
     </div>
