@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
+import MobileMenu from "./MobileMenu";
 
 export default function Header() {
   return (
@@ -14,17 +15,19 @@ export default function Header() {
           </span>
           RecallScanner
         </Link>
-        <nav className="flex items-center gap-4 sm:gap-6 text-[13px] font-medium text-slate-600">
+
+        {/* Desktop nav — hidden on mobile */}
+        <nav className="hidden sm:flex items-center gap-4 sm:gap-6 text-[13px] font-medium text-slate-600">
           <Link href="/recalls" className="hover:text-[var(--color-brand)] transition-colors">
             Brands
           </Link>
-          <Link href="/most-recalled" className="hidden sm:inline hover:text-[var(--color-brand)] transition-colors">
+          <Link href="/most-recalled" className="hover:text-[var(--color-brand)] transition-colors">
             Latest
           </Link>
-          <Link href="/trends" className="hidden sm:inline hover:text-[var(--color-brand)] transition-colors">
+          <Link href="/trends" className="hover:text-[var(--color-brand)] transition-colors">
             Trends
           </Link>
-          <Link href="/guides" className="hidden sm:inline hover:text-[var(--color-brand)] transition-colors">
+          <Link href="/guides" className="hover:text-[var(--color-brand)] transition-colors">
             Guides
           </Link>
           <Link href="/blog" className="hidden md:inline hover:text-[var(--color-brand)] transition-colors">
@@ -37,6 +40,9 @@ export default function Header() {
             Check VIN
           </Link>
         </nav>
+
+        {/* Mobile hamburger — handles its own drawer */}
+        <MobileMenu />
       </div>
     </header>
   );

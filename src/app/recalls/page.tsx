@@ -2,6 +2,7 @@ import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
 import type { Metadata } from "next";
 import SearchFilter from "@/components/SearchFilter";
 import VinChecker from "@/components/VinChecker";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "All Vehicle Recall Brands",
@@ -17,8 +18,14 @@ export default function RecallsIndex() {
     subtitle: "View recalls →",
   }));
 
+  const ld = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "All Brands", href: "/recalls" },
+  ]);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       <header className="mb-10">
         <div className="text-[11px] uppercase tracking-[0.12em] font-bold text-slate-500 mb-2">
           Browse by Manufacturer

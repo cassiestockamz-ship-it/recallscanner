@@ -183,7 +183,7 @@ export default async function MakePage({ params }: Props) {
             <Link
               key={m}
               href={`/recalls/${makeSlug(m)}`}
-              className="group rounded-xl border border-[var(--color-border)] bg-white p-3 text-[13px] font-medium text-slate-600 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors flex items-center justify-between"
+              className="cv-auto-sm group rounded-xl border border-[var(--color-border)] bg-white p-3 text-[13px] font-medium text-slate-600 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors flex items-center justify-between"
             >
               {m} Recalls
               <ArrowRight size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />

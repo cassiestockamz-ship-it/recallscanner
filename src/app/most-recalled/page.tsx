@@ -5,6 +5,7 @@ import { getRecentRecallsAll } from "@/lib/db";
 import type { Metadata } from "next";
 import RecallCard from "@/components/RecallCard";
 import { scoreRecall } from "@/lib/severity";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Latest Vehicle Recalls Across All Brands",
@@ -33,8 +34,14 @@ export default async function MostRecalledPage() {
   const totalCrit = scored.filter((s) => s.severity.tier === "crit").length;
   const totalWatch = scored.filter((s) => s.severity.tier === "watch").length;
 
+  const ld = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Latest Recalls", href: "/most-recalled" },
+  ]);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 md:py-14">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       {/* Header */}
       <header className="mb-10">
         <div className="text-[11px] uppercase tracking-[0.12em] font-bold text-slate-500 mb-2">

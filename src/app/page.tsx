@@ -240,7 +240,7 @@ export default function HomePage() {
               <Link
                 key={make}
                 href={`/recalls/${makeSlug(make)}`}
-                className="rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-center text-[13px] font-medium text-slate-700 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors"
+                className="cv-auto-sm rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-center text-[13px] font-medium text-slate-700 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors"
               >
                 {make}
               </Link>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -8,8 +9,14 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
+  const ld = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Contact", href: "/contact" },
+  ]);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       <h1 className="text-3xl font-bold mb-4">Contact RecallScanner</h1>
 
       <div className="space-y-6 text-slate-600 text-sm leading-relaxed">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDistinctRecallMonths } from "@/lib/db";
 import type { Metadata } from "next";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Vehicle Recall Reports · Monthly Safety Updates",
@@ -14,8 +15,14 @@ export const revalidate = 3600;
 export default async function BlogIndex() {
   const months = await getDistinctRecallMonths();
 
+  const ld = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Reports", href: "/blog" },
+  ]);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       <h1 className="text-3xl font-bold mb-2">Recall Reports</h1>
       <p className="text-slate-500 mb-8">
         Monthly summaries of vehicle safety recalls, trends, and what you need to know.

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -9,9 +10,14 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   const lastUpdated = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const ld = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Terms", href: "/terms" },
+  ]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       <h1 className="text-3xl font-bold mb-2">Terms of Use</h1>
       <p className="text-sm text-slate-400 mb-8">Last updated: {lastUpdated}</p>
 

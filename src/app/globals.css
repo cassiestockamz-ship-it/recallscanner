@@ -130,6 +130,10 @@ body {
   content-visibility: auto;
   contain-intrinsic-size: auto 180px;
 }
+.cv-auto-sm {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
+}
 
 /* ————————————————————————————————————————————————
    View Transitions API — named persistent elements that

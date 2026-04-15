@@ -183,7 +183,7 @@ export default async function ModelPage({ params }: Props) {
                 <Link
                   key={m.model}
                   href={`/recalls/${makeParam}/${m.model_slug}`}
-                  className="rounded-xl border border-[var(--color-border)] bg-white p-3 text-center text-[13px] font-medium text-slate-600 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors"
+                  className="cv-auto-sm rounded-xl border border-[var(--color-border)] bg-white p-3 text-center text-[13px] font-medium text-slate-600 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] transition-colors"
                 >
                   {m.model}
                 </Link>

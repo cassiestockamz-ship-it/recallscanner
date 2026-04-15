@@ -1,5 +1,6 @@
 import VinChecker from "@/components/VinChecker";
 import type { Metadata } from "next";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Free VIN Recall Check · Check Your Vehicle by VIN Number",
@@ -19,11 +20,20 @@ export default function VinLanding() {
     description: "Free vehicle recall lookup by VIN. Powered by official NHTSA data.",
   };
 
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "VIN Check", href: "/vin" },
+  ]);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
 
       <div className="text-center mb-10">

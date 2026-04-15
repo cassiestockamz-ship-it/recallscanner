@@ -61,7 +61,7 @@ export default function SearchFilter({
           <Link
             key={item.href}
             href={item.href}
-            className="group rounded-xl border border-[var(--color-border)] bg-white p-3.5 hover:border-[var(--color-brand)] transition-colors"
+            className="cv-auto-sm group rounded-xl border border-[var(--color-border)] bg-white p-3.5 hover:border-[var(--color-brand)] transition-colors"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">

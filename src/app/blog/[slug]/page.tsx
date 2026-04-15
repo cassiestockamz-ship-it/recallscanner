@@ -4,6 +4,7 @@ import { getRecallsForMonth, getDistinctRecallMonths } from "@/lib/db";
 import { formatDate, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
 import EmailCapture from "@/components/EmailCapture";
 import BlogEditorial from "@/components/BlogEditorial";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 import type { Metadata } from "next";
 
 interface Props {
@@ -93,8 +94,15 @@ export default async function BlogPost({ params }: Props) {
     return text.includes("fire") || text.includes("crash") || text.includes("injury") || text.includes("death");
   }).slice(0, 5);
 
+  const ld = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Reports", href: "/blog" },
+    { name: `${monthLabel} Recalls`, href: `/blog/${slug}` },
+  ]);
+
   return (
     <article className="max-w-3xl mx-auto px-4 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       {/* Breadcrumb */}
       <nav className="text-sm text-slate-400 mb-6">
         <Link href="/blog" className="hover:text-brand">Reports</Link>

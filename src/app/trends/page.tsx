@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRecallsByYear, getRecallsByBrand, getRecallsByComponent, getMostRecalledModels } from "@/lib/db";
 import type { Metadata } from "next";
+import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Vehicle Recall Trends · Data & Statistics",
@@ -105,11 +106,20 @@ export default async function TrendsPage() {
     },
   };
 
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Trends", href: "/trends" },
+  ]);
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <h1 className="text-3xl font-bold mb-2">Vehicle Recall Trends</h1>
       <p className="text-slate-500 mb-8">
