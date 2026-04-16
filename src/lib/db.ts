@@ -189,6 +189,22 @@ export async function resolveModelSlug(
     const probeNoDash = probe.replace(/-/g, "");
     if (canonical.has(probeNoDash)) return probeNoDash;
   }
+
+  // Last resort: sibling trim match. Silverado 2500 has no recalls but its
+  // sibling Silverado 1500 does -- redirect to the sibling with the most
+  // recall data so readers land on the page closest to what they searched.
+  const baseWord = parts[0];
+  if (baseWord && baseWord.length >= 3) {
+    const siblings = [...canonical].filter(
+      (s) => s === baseWord || s.startsWith(`${baseWord}-`) || s.startsWith(`${baseWord}`)
+    );
+    if (siblings.length > 0) {
+      const counts = new Map<string, number>();
+      for (const r of recallSlugs) counts.set(r.model_slug, (counts.get(r.model_slug) || 0) + 1);
+      siblings.sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
+      return siblings[0];
+    }
+  }
   return null;
 }
 

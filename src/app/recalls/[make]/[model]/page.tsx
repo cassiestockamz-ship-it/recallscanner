@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { POPULAR_MAKES, makeSlug, unslug } from "@/lib/nhtsa";
 import {
   getModelsForMake,
@@ -63,7 +63,7 @@ export default async function ModelPage({ params }: Props) {
   if (recalls.length === 0 && complaints.length === 0) {
     const canonical = await resolveModelSlug(makeParam, modelParam);
     if (canonical && canonical !== modelParam) {
-      redirect(`/recalls/${makeParam}/${canonical}`);
+      permanentRedirect(`/recalls/${makeParam}/${canonical}`);
     }
     notFound();
   }
