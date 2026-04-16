@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { POPULAR_MAKES, makeSlug, unslug } from "@/lib/nhtsa";
 import {
   getModelsForMake,
+  getModelsForMakeWithData,
   getRecallsForModel,
   getComplaintsForModel,
   getModelReliability,
+  resolveModelSlug,
 } from "@/lib/db";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
@@ -50,20 +52,29 @@ export default async function ModelPage({ params }: Props) {
   const make = findMake(makeParam);
   if (!make) notFound();
 
-  const allModels = await getModelsForMake(makeParam);
-  const matchingModel = allModels.find((m) => m.model_slug === modelParam);
-  if (!matchingModel) notFound();
-
-  const modelDisplay = matchingModel.model;
-
-  const [recalls, complaints, reliability] = await Promise.all([
+  const [recalls, complaints] = await Promise.all([
     getRecallsForModel(makeParam, modelParam),
     getComplaintsForModel(makeParam, modelParam),
-    getModelReliability(makeParam, modelParam),
   ]);
 
-  // Soft-404 prevention
-  if (recalls.length === 0 && complaints.length === 0) notFound();
+  // Orphan slug (model exists in vPIC but NHTSA rolls recalls under a
+  // different slug): try to resolve to the canonical slug and 301 there.
+  // Falls through to notFound() only if there is no reasonable canonical.
+  if (recalls.length === 0 && complaints.length === 0) {
+    const canonical = await resolveModelSlug(makeParam, modelParam);
+    if (canonical && canonical !== modelParam) {
+      redirect(`/recalls/${makeParam}/${canonical}`);
+    }
+    notFound();
+  }
+
+  const allModels = await getModelsForMakeWithData(makeParam);
+  const matchingModel = allModels.find((m) => m.model_slug === modelParam);
+  // We have recall/complaint data so the slug is real. If it isn't in
+  // nhtsa_models for some reason, synthesize a display name from the slug.
+  const modelDisplay = matchingModel?.model ?? unslug(modelParam).toUpperCase();
+
+  const reliability = await getModelReliability(makeParam, modelParam);
 
   const jsonLd = {
     "@context": "https://schema.org",

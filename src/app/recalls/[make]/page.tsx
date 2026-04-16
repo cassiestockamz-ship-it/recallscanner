@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
-import { getModelsForMake, getRecentRecallsForMake } from "@/lib/db";
+import { getModelsForMakeWithData, getRecentRecallsForMake } from "@/lib/db";
 import type { Metadata } from "next";
 import VinChecker from "@/components/VinChecker";
 import SearchFilter from "@/components/SearchFilter";
@@ -37,7 +37,7 @@ export default async function MakePage({ params }: Props) {
   if (!make) notFound();
 
   const [models, recalls] = await Promise.all([
-    getModelsForMake(slug),
+    getModelsForMakeWithData(slug),
     getRecentRecallsForMake(slug),
   ]);
 

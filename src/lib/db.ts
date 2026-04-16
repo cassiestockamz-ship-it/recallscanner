@@ -117,6 +117,81 @@ export async function getModelsForMake(makeSlugVal: string): Promise<DbModel[]> 
   );
 }
 
+/**
+ * Get only models for a make that actually have recall data. Used on the
+ * brand page model grid and the related-models section so we never link to a
+ * slug that would 404 at render time. vPIC returns every trim-level variant
+ * (F-150 Super Crew, F-150 Super Cab, ...) but the Recall API rolls those up
+ * under the base model, so ~80% of nhtsa_models rows have zero recalls and
+ * zero complaints under their specific slug.
+ */
+export async function getModelsForMakeWithData(makeSlugVal: string): Promise<DbModel[]> {
+  const [models, recallSlugs, complaintSlugs] = await Promise.all([
+    getModelsForMake(makeSlugVal),
+    query<{ model_slug: string }>(
+      "nhtsa_recalls",
+      `make_slug=eq.${encodeURIComponent(makeSlugVal)}&select=model_slug`,
+      true
+    ),
+    query<{ model_slug: string }>(
+      "nhtsa_complaints",
+      `make_slug=eq.${encodeURIComponent(makeSlugVal)}&select=model_slug`,
+      true
+    ),
+  ]);
+  const withData = new Set<string>();
+  for (const r of recallSlugs) withData.add(r.model_slug);
+  for (const c of complaintSlugs) withData.add(c.model_slug);
+  return models.filter((m) => withData.has(m.model_slug));
+}
+
+/**
+ * Resolve an orphan model slug (one that has no recalls or complaints) to the
+ * closest canonical slug that does. Handles two common pipeline mismatches:
+ *   1. Dash normalization: nhtsa_models stores "rx-350", nhtsa_recalls stores "rx350"
+ *   2. Trim rollup: nhtsa_models stores "f-150-super-crew", recalls roll up under "f-150"
+ * Returns null if no reasonable canonical slug exists.
+ */
+export async function resolveModelSlug(
+  makeSlugVal: string,
+  modelSlugVal: string
+): Promise<string | null> {
+  const [recallSlugs, complaintSlugs] = await Promise.all([
+    query<{ model_slug: string }>(
+      "nhtsa_recalls",
+      `make_slug=eq.${encodeURIComponent(makeSlugVal)}&select=model_slug`,
+      true
+    ),
+    query<{ model_slug: string }>(
+      "nhtsa_complaints",
+      `make_slug=eq.${encodeURIComponent(makeSlugVal)}&select=model_slug`,
+      true
+    ),
+  ]);
+  const canonical = new Set<string>();
+  for (const r of recallSlugs) canonical.add(r.model_slug);
+  for (const c of complaintSlugs) canonical.add(c.model_slug);
+  if (canonical.has(modelSlugVal)) return modelSlugVal;
+
+  // Try dash-normalization: rx-350 -> rx350, es-350 -> es350, etc.
+  const dashStripped = modelSlugVal.replace(/-/g, "");
+  if (canonical.has(dashStripped)) return dashStripped;
+
+  // Try collapsing letter-digit dashes only: f-150-super-crew -> f150-super-crew
+  const letterDigitStripped = modelSlugVal.replace(/([a-z])-(\d)/g, "$1$2");
+  if (canonical.has(letterDigitStripped)) return letterDigitStripped;
+
+  // Try progressively shorter prefixes: f-150-super-crew -> f-150-super -> f-150 -> f
+  const parts = modelSlugVal.split("-");
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const probe = parts.slice(0, i).join("-");
+    if (canonical.has(probe)) return probe;
+    const probeNoDash = probe.replace(/-/g, "");
+    if (canonical.has(probeNoDash)) return probeNoDash;
+  }
+  return null;
+}
+
 /** Get recent recalls for a make, mapped to Recall interface */
 export async function getRecentRecallsForMake(makeSlugVal: string, limit = 30): Promise<Recall[]> {
   const rows = await query<DbRecall>(

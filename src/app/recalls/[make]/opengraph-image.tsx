@@ -1,5 +1,5 @@
 import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
-import { getModelsForMake, getRecentRecallsForMake } from "@/lib/db";
+import { getModelsForMakeWithData, getRecentRecallsForMake } from "@/lib/db";
 import { scoreRecall } from "@/lib/severity";
 import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og";
 
@@ -19,7 +19,7 @@ export default async function Image({ params }: Props) {
   const { make: makeParam } = await params;
   const make = findMake(makeParam) || "Unknown";
   const [models, recalls] = await Promise.all([
-    getModelsForMake(makeParam),
+    getModelsForMakeWithData(makeParam),
     getRecentRecallsForMake(makeParam),
   ]);
 
