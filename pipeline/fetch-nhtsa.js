@@ -455,7 +455,9 @@ async function main() {
     console.error(`Failed to log job run: ${err.message}`);
   }
 
-  await sendTelegram(summary);
+  // 2026-09-30: routine success summaries were Telegram noise. The run is recorded in job_runs and
+  // surfaces in the daily site-ops brief; only message directly when a brand errored.
+  if (errors.length > 0) await sendTelegram(summary);
 }
 
 main().catch(async (err) => {
