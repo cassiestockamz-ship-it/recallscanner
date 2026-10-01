@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getRecallsForMonth, getDistinctRecallMonths } from "@/lib/db";
-import { formatDate, makeSlug, nhtsaRecallUrl } from "@/lib/nhtsa";
+import { getRecallsForMonth, getDistinctRecallMonths, countRecallsForMonth } from "@/lib/db";
+import { formatDate, makeSlug, nhtsaRecallUrl, POPULAR_MAKES } from "@/lib/nhtsa";
+import { isBlogMonthIndexable } from "@/lib/blogIndex";
 import EmailCapture from "@/components/EmailCapture";
 import BlogEditorial from "@/components/BlogEditorial";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
@@ -37,10 +38,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!parsed) return {};
   const monthLabel = new Date(parsed.year, parsed.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const title = `${monthLabel} Vehicle Recalls: What You Need to Know`;
+  // Exact row count (Content-Range), falling back to the month's rows (always well under the 1000 cap).
+  const count = (await countRecallsForMonth(parsed.month, parsed.year)) ?? (await getRecallsForMonth(parsed.month, parsed.year)).length;
+  const indexable = isBlogMonthIndexable(parsed.month, parsed.year, count);
   return {
     title,
     description: `${title}. All safety recalls reported to NHTSA in ${monthLabel}, with affected vehicles, components, and what to do.`,
     alternates: { canonical: `https://www.recallscanner.com/blog/${slug}` },
+    ...(indexable ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
@@ -56,6 +61,7 @@ export default async function BlogPost({ params }: Props) {
 
   const monthLabel = new Date(parsed.year, parsed.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const title = `${monthLabel} Vehicle Recalls: What You Need to Know`;
+  const currentYear = new Date().getFullYear();
 
   // Group by brand
   const byBrand = new Map<string, typeof recalls>();
@@ -111,7 +117,10 @@ export default async function BlogPost({ params }: Props) {
       </nav>
 
       <h1 className="text-3xl font-bold mb-3">{title}</h1>
-      <time className="text-sm text-slate-400 block mb-6">{monthLabel}</time>
+      <time className="text-sm text-slate-400 block mb-2">{monthLabel}</time>
+      <p className="text-sm text-slate-500 mb-6">
+        Covers NHTSA campaigns for model years {currentYear - 9} to {currentYear} across {POPULAR_MAKES.length} brands; one entry per campaign.
+      </p>
 
       {/* Editorial analysis — unique per month */}
       <BlogEditorial

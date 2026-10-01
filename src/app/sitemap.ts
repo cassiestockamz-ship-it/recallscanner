@@ -1,6 +1,10 @@
 import { POPULAR_MAKES, makeSlug } from "@/lib/nhtsa";
 import { getAllModels, getDistinctRecallMonths } from "@/lib/db";
+import { isBlogMonthIndexable } from "@/lib/blogIndex";
 import type { MetadataRoute } from "next";
+
+// Rebuild daily instead of freezing at build time.
+export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://www.recallscanner.com";
@@ -44,7 +48,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Auto-discover all months with recall data for blog posts
   const months = await getDistinctRecallMonths();
-  const blogPages: MetadataRoute.Sitemap = months.map((m) => ({
+  // Only indexable months (last 24 months with >= 15 recalls, plus current/previous month)
+  const nowDate = new Date();
+  const blogPages: MetadataRoute.Sitemap = months
+    .filter((m) => isBlogMonthIndexable(m.month, m.year, m.count, nowDate))
+    .map((m) => ({
     url: `${base}/blog/${m.slug}`,
     lastModified: now,
     changeFrequency: "monthly" as const,

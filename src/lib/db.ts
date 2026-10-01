@@ -382,13 +382,51 @@ export async function getRecallsForMonth(month: number, year: number): Promise<R
   return rows.map(toRecall);
 }
 
+/**
+ * Exact number of recall rows for a month, via PostgREST `Prefer: count=exact`
+ * (Content-Range total), so it is never truncated by the 1000-row response cap.
+ * Returns null if the count cannot be read.
+ */
+export async function countRecallsForMonth(month: number, year: number): Promise<number | null> {
+  const monthStr = month.toString().padStart(2, "0");
+  const pattern = `/${monthStr}/${year}`;
+  const url = `${SUPABASE_URL}/rest/v1/nhtsa_recalls?report_date=like.*${encodeURIComponent(pattern)}&select=campaign_number&limit=1`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Prefer: "count=exact",
+      },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    const total = (res.headers.get("content-range") || "").split("/")[1];
+    const n = total ? parseInt(total, 10) : NaN;
+    return isNaN(n) ? null : n;
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch every report_date, paging past the PostgREST 1000-row response cap. */
+async function getAllReportDates(): Promise<{ report_date: string | null }[]> {
+  const PAGE = 1000;
+  const out: { report_date: string | null }[] = [];
+  for (let offset = 0; offset < 100000; offset += PAGE) {
+    const page = await query<{ report_date: string | null }>(
+      "nhtsa_recalls",
+      `select=report_date&order=campaign_number.asc&offset=${offset}&limit=${PAGE}`
+    );
+    out.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return out;
+}
+
 /** Get all distinct months that have recall data (for blog index + sitemap) */
 export async function getDistinctRecallMonths(): Promise<{ month: number; year: number; count: number; slug: string }[]> {
-  const rows = await query<DbRecall>(
-    "nhtsa_recalls",
-    `select=report_date`,
-    true
-  );
+  const rows = await getAllReportDates();
   const monthMap = new Map<string, { month: number; year: number; count: number }>();
   for (const r of rows) {
     if (!r.report_date) continue;
