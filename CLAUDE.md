@@ -1,5 +1,7 @@
 # RecallScanner — CLAUDE.md
 
+> **Operated by site-ops since 2026-09-30.** This repo is maintained by an autonomous team (`~/site-ops/`, runs on the VPS). Before working here by hand, read `~/site-ops/CLAUDE.md`, `~/site-ops/STRATEGY.md`, and this site's playbook `~/site-ops/playbooks/recallscanner.md`, and `git pull` first: the VPS pushes here.
+
 ## Thesis
 **The verdict layer on top of NHTSA.** Not a lookup tool — a severity-scored, plain-English, one-screen answer to "is my car dangerous right now?" NHTSA has the data but won't rank risk. CarFax charges. OEMs are single-brand. We sit on top of NHTSA's free public APIs and add the interpretation layer nobody else provides.
 
@@ -48,7 +50,7 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - FAQ section on homepage with FAQPage + Speakable schema
 - Dynamic sitemap (static pages + brand pages + all model pages from Supabase + blog posts + guide pages)
 - Project Dash analytics tracking (inline script in layout.tsx)
-- Google AdSense script in head (approval pending as of 2026-04-13)
+- Google AdSense script in head (**AdSense was REJECTED** (updated 2026-10-02); was "approval pending as of 2026-04-13")
 - FlexOffers verification meta tag
 - Demo route [`/demo/critical`](src/app/demo/critical/page.tsx) — noindex preview of the ACTION NEEDED state, renders real F-150 recalls through SafetyVerdict
 
@@ -108,7 +110,7 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - **Iconography**: Lucide React. Category icons in the severity engine map to `shield-alert` (airbag), `disc-3` (brakes), `zap` (electrical), `cog` (engine), `navigation` (steering), `fuel`, `armchair` (seat), `cpu` (software), `lightbulb` (lighting), `wrench` (suspension), `circle-dot` (tires), `car-front` (body), `alert-triangle` (other).
 
 ### Pipeline (`pipeline/`)
-- `fetch-nhtsa.js` — Fetches all recall/complaint/model data from NHTSA API, stores in Supabase. Runs daily on VPS via PM2 cron.
+- `fetch-nhtsa.js` - Fetches all recall/complaint/model data from NHTSA API, stores in Supabase. Runs daily on VPS via PM2 cron. (updated 2026-10-02): it messages Telegram only when a brand errors. Deploy with `sudo ops-deploy recallscanner` (see Deployment).
 - `ecosystem.config.cjs` — PM2 configuration for the pipeline
 - Env: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 - VPS path: loads from `/opt/shared/.env`
@@ -135,8 +137,9 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - **Root layout metadata**: OpenGraph, canonical, per-route dynamic OG images on brand pages
 
 ## Deployment
-- Vercel (hobby plan)
-- Deploy command: `source ~/.claude/tokens.env && "C:/Users/Amazon IRL/AppData/Roaming/npm/vercel.cmd" --prod --token $VERCEL_TOKEN --scope taylors-projects-6d8e0bd8 --yes`
+- Vercel (hobby plan). (updated 2026-10-02): no auto-deploy on git push; site-ops deploys with `bin/deploy.sh recallscanner` (Vercel CLI, remote build, live check, auto-rollback).
+- **VPS pipeline (`pipeline/`) (updated 2026-10-02):** deployed by `sudo ops-deploy recallscanner`, run by the `ops` user from the clone in `/opt/site-ops/sites/`. It syncs into `/opt/<dir>` and rebuilds, without restarting PM2 (cron jobs pick up new code on the next fire). The old "ssh in and git pull / scp" instructions are obsolete.
+- Manual Vercel fallback command: `source ~/.claude/tokens.env && "C:/Users/Amazon IRL/AppData/Roaming/npm/vercel.cmd" --prod --token $VERCEL_TOKEN --scope taylors-projects-6d8e0bd8 --yes`
 - GitHub: cassiestockamz-ship-it/recallscanner (private)
 - ISR: 1hr revalidation for Supabase queries, 24hr for NHTSA API calls
 - `experimental.viewTransition: true` in next.config.ts
@@ -146,7 +149,7 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - Email: hello@recallscanner.com → cassiestockamz@gmail.com (routing)
 
 ## Monetization
-- **Google AdSense**: ca-pub-7557739369186741 (script in layout.tsx `<head>`, added 2026-03-29, **approval pending**)
+- **Google AdSense**: ca-pub-7557739369186741 (script in layout.tsx `<head>`, added 2026-03-29, **REJECTED** (updated 2026-10-02); was "approval pending"). Notes below about re-adding things "post-approval" only apply if a future application is approved.
 - **FlexOffers**: verification tag present (`fo-verify` meta in layout.tsx), awaiting approval
 - **CJ Affiliate**: applied, awaiting approval
 - **Amazon Associates**: tag `kawaiiguy0f-rs-20`. Resqme escape tool product card **currently removed from all programmatic pages** per the AdSense recovery playbook (2026-04-13). Will be re-added to editorial hub pages post-approval.
@@ -166,7 +169,7 @@ https://recallscanner.com (canonical: www.recallscanner.com)
 - Runs on DO VPS (198.199.91.55) via PM2 cron
 - Daily fetch of all 32 brands × 10 years of models, recalls, and complaints
 - Stores everything in Supabase so the site never hits NHTSA at render time (except VIN lookups, which are always live)
-- Telegram notifications on pipeline runs
+- Telegram notifications: only when a brand errors, not on every run (updated 2026-10-02)
 - Config: `pipeline/ecosystem.config.cjs`
 - **After fetch** the pipeline runs `translateNewRecalls()` which calls Claude Haiku 4.5 with prompt caching to generate plain-English hooks for any newly-ingested recalls that don't have one yet. Graceful no-op when `ANTHROPIC_API_KEY` is missing (logs "Hook translation: skipped (no API key)"). **Add `ANTHROPIC_API_KEY` to `/opt/shared/.env` on the VPS** to activate nightly hook generation — until then, any recall that arrives after 2026-04-14 will render with the rule-based regex fallback instead of the AI hook.
 
