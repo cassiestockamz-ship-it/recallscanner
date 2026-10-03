@@ -7,22 +7,47 @@
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 
-async function query<T>(table: string, params: string, allRows = false): Promise<T[]> {
-  const fullParams = allRows && !params.includes("limit=") ? `${params}&limit=10000` : params;
-  const url = `${SUPABASE_URL}/rest/v1/${table}?${fullParams}`;
+const PAGE_SIZE = 1000; // PostgREST caps a response at 1000 rows
+
+async function fetchRows<T>(url: string, range?: string): Promise<T[] | null> {
   const headers: Record<string, string> = {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
   };
+  if (range) headers.Range = range;
   const res = await fetch(url, {
     headers,
     next: { revalidate: 3600 }, // 1hr ISR — pipeline refreshes daily
   });
   if (!res.ok) {
     console.error(`Supabase query failed: ${res.status} ${await res.text()}`);
-    return [];
+    return null;
   }
   return res.json();
+}
+
+/**
+ * Query a table. Without an explicit limit/offset it pages through every row
+ * (1000 per request, stable order with id as tie-break) so counts are never
+ * silently capped. The allRows flag is kept for call-site readability.
+ */
+async function query<T>(table: string, params: string, _allRows = false): Promise<T[]> {
+  const base = `${SUPABASE_URL}/rest/v1/${table}`;
+  if (params.includes("limit=") || params.includes("offset=")) {
+    return (await fetchRows<T>(`${base}?${params}`)) ?? [];
+  }
+  const orderMatch = params.match(/(^|&)order=([^&]*)/);
+  const stable = orderMatch
+    ? params.replace(orderMatch[0], `${orderMatch[1]}order=${orderMatch[2]},id.asc`)
+    : `${params}${params ? "&" : ""}order=id.asc`;
+  const out: T[] = [];
+  for (let from = 0; from < 200000; from += PAGE_SIZE) {
+    const page = await fetchRows<T>(`${base}?${stable}`, `${from}-${from + PAGE_SIZE - 1}`);
+    if (page === null) return from === 0 ? [] : out;
+    out.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+  return out;
 }
 
 // ── Types ───────────────────────────────────────────────────
