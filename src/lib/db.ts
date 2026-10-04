@@ -151,23 +151,50 @@ export async function getModelsForMake(makeSlugVal: string): Promise<DbModel[]> 
  * zero complaints under their specific slug.
  */
 export async function getModelsForMakeWithData(makeSlugVal: string): Promise<DbModel[]> {
-  const [models, recallSlugs, complaintSlugs] = await Promise.all([
+  // The list is built from the recall and complaint rows themselves, so a
+  // pipeline cleanup of nhtsa_models can never make a real model disappear.
+  // nhtsa_models only supplies the display name and latest year when present.
+  const cols = "select=make,make_slug,model,model_slug,model_year";
+  const [models, recallRows, complaintRows] = await Promise.all([
     getModelsForMake(makeSlugVal),
-    query<{ model_slug: string }>(
-      "nhtsa_recalls",
-      `make_slug=eq.${encodeURIComponent(makeSlugVal)}&select=model_slug`,
-      true
-    ),
-    query<{ model_slug: string }>(
-      "nhtsa_complaints",
-      `make_slug=eq.${encodeURIComponent(makeSlugVal)}&select=model_slug`,
-      true
-    ),
+    query<ModelRow>("nhtsa_recalls", `make_slug=eq.${encodeURIComponent(makeSlugVal)}&${cols}`, true),
+    query<ModelRow>("nhtsa_complaints", `make_slug=eq.${encodeURIComponent(makeSlugVal)}&${cols}`, true),
   ]);
-  const withData = new Set<string>();
-  for (const r of recallSlugs) withData.add(r.model_slug);
-  for (const c of complaintSlugs) withData.add(c.model_slug);
-  return models.filter((m) => withData.has(m.model_slug));
+  return modelsFromRows([...recallRows, ...complaintRows], models);
+}
+
+interface ModelRow {
+  make: string;
+  make_slug: string;
+  model: string;
+  model_slug: string;
+  model_year: string | null;
+}
+
+/** Distinct (make, model) from data rows, preferring nhtsa_models names when it has them. */
+function modelsFromRows(rows: ModelRow[], known: DbModel[]): DbModel[] {
+  const names = new Map(known.map((m) => [`${m.make_slug}/${m.model_slug}`, m]));
+  const out = new Map<string, DbModel>();
+  for (const r of rows) {
+    const key = `${r.make_slug}/${r.model_slug}`;
+    const year = parseInt(r.model_year ?? "", 10) || 0;
+    const have = out.get(key);
+    if (have) {
+      if (year > have.latest_year) have.latest_year = year;
+      continue;
+    }
+    const k = names.get(key);
+    out.set(key, {
+      make: k?.make ?? r.make,
+      make_slug: r.make_slug,
+      model: k?.model ?? r.model,
+      model_slug: r.model_slug,
+      latest_year: k?.latest_year ?? year,
+    });
+  }
+  return [...out.values()].sort(
+    (x, y) => x.make.localeCompare(y.make) || x.model.localeCompare(y.model)
+  );
 }
 
 /**
@@ -233,12 +260,40 @@ export async function resolveModelSlug(
   return null;
 }
 
+/** report_date is text DD/MM/YYYY, so SQL ordering is wrong. Parse to a sortable number. */
+function recallTime(d: string | null): number {
+  const m = (d ?? "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? Number(m[3]) * 10000 + Number(m[2]) * 100 + Number(m[1]) : 0;
+}
+
+/** Complaint dates are text MM/DD/YYYY. */
+function complaintTime(d: string | null): number {
+  const m = (d ?? "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? Number(m[3]) * 10000 + Number(m[1]) * 100 + Number(m[2]) : 0;
+}
+
+/**
+ * Newest recalls first. Fetches only rows from the last N years (widening
+ * until `limit` rows are found), parses the text dates in JS, sorts, slices.
+ */
+async function newestRecalls(filter: string, limit: number): Promise<DbRecall[]> {
+  const thisYear = new Date().getFullYear();
+  for (let span = 2; span <= 40; span *= 2) {
+    const years = Array.from({ length: span }, (_, i) => `report_date.like.*/${thisYear - i}`).join(",");
+    const rows = await query<DbRecall>(
+      "nhtsa_recalls",
+      `${filter}${filter ? "&" : ""}or=(${years})&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
+    );
+    if (rows.length >= limit || span >= 32) {
+      return rows.sort((a, b) => recallTime(b.report_date) - recallTime(a.report_date)).slice(0, limit);
+    }
+  }
+  return [];
+}
+
 /** Get recent recalls for a make, mapped to Recall interface */
 export async function getRecentRecallsForMake(makeSlugVal: string, limit = 30): Promise<Recall[]> {
-  const rows = await query<DbRecall>(
-    "nhtsa_recalls",
-    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&order=report_date.desc&limit=${limit}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
-  );
+  const rows = await newestRecalls(`make_slug=eq.${encodeURIComponent(makeSlugVal)}`, limit);
   return rows.map(toRecall);
 }
 
@@ -246,9 +301,9 @@ export async function getRecentRecallsForMake(makeSlugVal: string, limit = 30): 
 export async function getRecallsForModel(makeSlugVal: string, modelSlugVal: string): Promise<Recall[]> {
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&model_slug=eq.${encodeURIComponent(modelSlugVal)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
+    `make_slug=eq.${encodeURIComponent(makeSlugVal)}&model_slug=eq.${encodeURIComponent(modelSlugVal)}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
-  return rows.map(toRecall);
+  return rows.sort((a, b) => recallTime(b.report_date) - recallTime(a.report_date)).map(toRecall);
 }
 
 /** Get complaints for a specific model, mapped to Complaint interface */
@@ -257,15 +312,12 @@ export async function getComplaintsForModel(makeSlugVal: string, modelSlugVal: s
     "nhtsa_complaints",
     `make_slug=eq.${encodeURIComponent(makeSlugVal)}&model_slug=eq.${encodeURIComponent(modelSlugVal)}&order=date_filed.desc&select=odi_number,make,make_slug,model,model_slug,model_year,date_incident,date_filed,components,summary,crash,fire,injuries,deaths`
   );
-  return rows.map(toComplaint);
+  return rows.sort((a, b) => complaintTime(b.date_filed) - complaintTime(a.date_filed)).map(toComplaint);
 }
 
 /** Get recent recalls across all makes (most-recalled page) */
 export async function getRecentRecallsAll(limit = 30): Promise<Recall[]> {
-  const rows = await query<DbRecall>(
-    "nhtsa_recalls",
-    `order=report_date.desc&limit=${limit}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
-  );
+  const rows = await newestRecalls("", limit);
   return rows.map(toRecall);
 }
 
@@ -402,9 +454,9 @@ export async function getRecallsForMonth(month: number, year: number): Promise<R
   const pattern = `/${monthStr}/${year}`;
   const rows = await query<DbRecall>(
     "nhtsa_recalls",
-    `report_date=like.*${encodeURIComponent(pattern)}&order=report_date.desc&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
+    `report_date=like.*${encodeURIComponent(pattern)}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
-  return rows.map(toRecall);
+  return rows.sort((a, b) => recallTime(b.report_date) - recallTime(a.report_date)).map(toRecall);
 }
 
 /**
@@ -476,22 +528,19 @@ export async function getDistinctRecallMonths(): Promise<{ month: number; year: 
 
 /** Get all models for sitemap generation (only models that have recalls) */
 export async function getAllModels(): Promise<DbModel[]> {
-  // Use inner join via PostgREST resource embedding to filter to models with recalls
-  const allModels = await query<DbModel>(
-    "nhtsa_models",
-    `order=make.asc,model.asc&select=make,make_slug,model,model_slug,latest_year`
-  );
-  // Filter to only models with enough recalls to justify an indexable page (AdSense / HCU: no thin programmatic pages)
-  const modelsWithRecalls = await query<{ make_slug: string; model_slug: string }>(
-    "nhtsa_recalls",
-    `select=make_slug,model_slug`,
-    true
-  );
+  // Built from nhtsa_recalls (not nhtsa_models) so the sitemap survives any cleanup of the models table.
+  const [known, recallRows] = await Promise.all([
+    query<DbModel>("nhtsa_models", `order=make.asc,model.asc&select=make,make_slug,model,model_slug,latest_year`),
+    query<ModelRow>("nhtsa_recalls", `select=make,make_slug,model,model_slug,model_year`, true),
+  ]);
+  // Only models with enough recalls to justify an indexable page (AdSense / HCU: no thin programmatic pages)
   const recallCounts = new Map<string, number>();
-  for (const r of modelsWithRecalls) {
+  for (const r of recallRows) {
     const key = `${r.make_slug}/${r.model_slug}`;
     recallCounts.set(key, (recallCounts.get(key) || 0) + 1);
   }
   const MIN_RECALLS_FOR_INDEX = 3;
-  return allModels.filter((m) => (recallCounts.get(`${m.make_slug}/${m.model_slug}`) || 0) >= MIN_RECALLS_FOR_INDEX);
+  return modelsFromRows(recallRows, known).filter(
+    (m) => (recallCounts.get(`${m.make_slug}/${m.model_slug}`) || 0) >= MIN_RECALLS_FOR_INDEX
+  );
 }
