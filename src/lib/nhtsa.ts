@@ -85,30 +85,19 @@ export function nhtsaRecallUrl(campaignNumber: string): string {
  *  - DD/MM/YYYY (NHTSA recall API / Supabase stored format)
  *  - MM/DD/YYYY (NHTSA complaints/VIN API format)
  *  - ISO / any Date-parseable string
+ * Slash dates have a fixed order per source, so pass it ("dmy" for recalls,
+ * "mdy" for complaints); guessing breaks on ambiguous dates like 12/02/2026.
  * Returns "Jan 15, 2024" style output, or the original string if unparseable.
  */
-export function formatDate(raw: string): string {
+export function formatDate(raw: string, order: "dmy" | "mdy" = "dmy"): string {
   if (!raw) return "";
-  // DD/MM/YYYY vs MM/DD/YYYY: if first segment > 12, it must be a day
   const slashParts = raw.split("/");
   if (slashParts.length === 3) {
     const [a, b, year] = slashParts;
     const aNum = parseInt(a, 10);
     const bNum = parseInt(b, 10);
-    let month: number, day: number;
-    if (aNum > 12) {
-      // DD/MM/YYYY
-      day = aNum;
-      month = bNum;
-    } else if (bNum > 12) {
-      // MM/DD/YYYY
-      month = aNum;
-      day = bNum;
-    } else {
-      // Ambiguous -- assume MM/DD/YYYY (US convention for NHTSA VIN/complaint data)
-      month = aNum;
-      day = bNum;
-    }
+    const day = order === "dmy" ? aNum : bNum;
+    const month = order === "dmy" ? bNum : aNum;
     const d = new Date(parseInt(year, 10), month - 1, day);
     if (!isNaN(d.getTime())) {
       return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });

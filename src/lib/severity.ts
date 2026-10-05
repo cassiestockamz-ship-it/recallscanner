@@ -379,7 +379,7 @@ export function tierToLabel(t: Tier): string {
   return t === "crit" ? "Critical" : t === "watch" ? "Watch" : "Resolved";
 }
 
-/** Parse a "MM/DD/YYYY" or "DD/MM/YYYY" NHTSA date → JS Date */
+/** Parse an NHTSA recall report date ("DD/MM/YYYY") → JS Date */
 export function parseRecallDate(raw: string): Date | null {
   if (!raw) return null;
   const parts = raw.split("/");
@@ -389,9 +389,9 @@ export function parseRecallDate(raw: string): Date | null {
   }
   const [a, b, y] = parts.map((p) => parseInt(p, 10));
   if (isNaN(y)) return null;
-  // If first > 12 it's DD/MM/YYYY, else assume MM/DD/YYYY
-  const month = a > 12 ? b : a;
-  const day = a > 12 ? a : b;
+  // Recall report dates are always DD/MM/YYYY (see formatDate in nhtsa.ts)
+  const day = a;
+  const month = b;
   const d = new Date(y, (month || 1) - 1, day || 1);
   return isNaN(d.getTime()) ? null : d;
 }

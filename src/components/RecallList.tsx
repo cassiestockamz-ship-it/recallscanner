@@ -156,7 +156,7 @@ export default function RecallList({ recalls, complaints, make, modelDisplay }: 
               >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-xs text-slate-400">
-                    {formatDate(c.dateComplaintFiled)}
+                    {formatDate(c.dateComplaintFiled, "mdy")}
                   </span>
                   <span className="text-xs bg-blue-50 text-brand px-2 py-0.5 rounded">
                     {c.modelYear} {c.model}
