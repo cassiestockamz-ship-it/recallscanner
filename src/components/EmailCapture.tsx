@@ -35,7 +35,7 @@ export default function EmailCapture({ vehicleName, variant = "inline" }: Props)
   if (status === "success") {
     return (
       <div className={`rounded-lg p-4 ${variant === "banner" ? "bg-safe-light border border-green-200" : "bg-safe-light"}`}>
-        <p className="text-safe font-medium text-sm">You&apos;re on the list. We&apos;ll email you if NHTSA issues a new recall for your vehicle.</p>
+        <p className="text-safe font-medium text-sm">You&apos;re on the list. We&apos;ll email you once when vehicle recall alerts open, so you can pick your vehicle.</p>
       </div>
     );
   }
@@ -44,10 +44,10 @@ export default function EmailCapture({ vehicleName, variant = "inline" }: Props)
     <div className={`rounded-lg ${variant === "banner" ? "bg-blue-50 border border-blue-100 p-6" : "bg-surface p-4"}`}>
       <div className="mb-2">
         <h3 className="font-semibold text-sm text-slate-800">
-          Get a recall alert for your vehicle
+          Email me when vehicle recall alerts open
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">
-          We&apos;ll email you only when NHTSA issues a new recall for your vehicle. No other mail, no sharing, unsubscribe in one click.
+          Recall alerts by vehicle are coming. We&apos;ll send one email when they open so you can pick your vehicle, nothing else. No sharing, unsubscribe in one click.
           For urgent safety concerns, check your VIN directly or contact NHTSA.
         </p>
       </div>
