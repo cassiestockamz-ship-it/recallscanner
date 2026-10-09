@@ -68,7 +68,7 @@ export default function Page() {
 
       <h2>5. Unresolved recalls don't disappear</h2>
       <p>
-        There is <strong>no statute of limitations</strong> on a recall remedy for passenger vehicles. A campaign from 2012 is still redeemable today if nobody ever brought the car in. The recall moves with the vehicle across every resale, even if the paperwork doesn't.
+        Federal law sets <strong>no deadline for getting a vehicle recall repaired</strong>: an open campaign from years ago is generally still fixed free if nobody ever brought the car in. Two limits apply under 49 U.S.C. 30120: a maker does not have to remedy for free a vehicle first sold more than 15 years before the defect notice, and tire recalls carry a limited window after the owner is notified, so act on a tire notice quickly. The recall moves with the vehicle across every resale, even if the paperwork doesn't.
       </p>
       <p>
         This is the most important thing to know if you buy a used car. Always check the seller's VIN before handing over money, and insist that any open recalls be resolved before the sale closes. Dealers know this. Private sellers sometimes don't.

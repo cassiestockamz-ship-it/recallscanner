@@ -138,7 +138,7 @@ export default async function TrendsPage() {
         </div>
         <div className="bg-white border border-border rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-brand">{byYear[0]?.count || 0}</div>
-          <div className="text-xs text-slate-500">Recalls in {byYear[0]?.year || "2026"}</div>
+          <div className="text-xs text-slate-500">Recalls in {byYear[0]?.year || String(new Date().getFullYear())}</div>
         </div>
         <div className="bg-white border border-border rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-brand">{byBrand[0]?.make || "N/A"}</div>
