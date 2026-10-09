@@ -97,6 +97,7 @@ export interface DbComplaint {
 // ── Mappers (DB snake_case -> existing component interfaces) ─
 
 import type { Recall, Complaint } from "./nhtsa";
+import { getRecallsByMakeModelYear } from "./nhtsa";
 
 function toRecall(r: DbRecall): Recall {
   return {
@@ -303,7 +304,44 @@ export async function getRecallsForModel(makeSlugVal: string, modelSlugVal: stri
     "nhtsa_recalls",
     `make_slug=eq.${encodeURIComponent(makeSlugVal)}&model_slug=eq.${encodeURIComponent(modelSlugVal)}&select=campaign_number,manufacturer,make,make_slug,model,model_slug,model_year,component,summary,consequence,remedy,report_date,notes,plain_english_hook`
   );
-  return rows.sort((a, b) => recallTime(b.report_date) - recallTime(a.report_date)).map(toRecall);
+  const own = rows.map(toRecall);
+  const merged = await addLiveCampaigns(own, rows[0]);
+  return merged.sort((a, b) => recallTime(b.ReportReceivedDate) - recallTime(a.ReportReceivedDate));
+}
+
+/**
+ * nhtsa_recalls stores each campaign once (UNIQUE campaign_number), so a
+ * campaign covering several models sits under only one of them (B4). Add the
+ * campaigns NHTSA lists for this model over the last 10 model years, with the
+ * plain-English hook from our row when we have one. On any NHTSA error the
+ * stored rows are returned unchanged.
+ */
+async function addLiveCampaigns(own: Recall[], sample?: DbRecall): Promise<Recall[]> {
+  if (!sample) return own;
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => String(currentYear - i));
+  const live = (
+    await Promise.all(years.map((y) => getRecallsByMakeModelYear(sample.make, sample.model, y)))
+  ).flat();
+  const have = new Set(own.map((r) => r.NHTSACampaignNumber));
+  const extra = new Map<string, Recall>();
+  for (const r of live) {
+    if (!r?.NHTSACampaignNumber || have.has(r.NHTSACampaignNumber)) continue;
+    const prev = extra.get(r.NHTSACampaignNumber);
+    if (!prev || Number(r.ModelYear) > Number(prev.ModelYear)) {
+      extra.set(r.NHTSACampaignNumber, { ...r, Make: sample.make, Model: sample.model });
+    }
+  }
+  if (extra.size === 0) return own;
+  const hooks = await query<Pick<DbRecall, "campaign_number" | "plain_english_hook">>(
+    "nhtsa_recalls",
+    `campaign_number=in.(${[...extra.keys()].map(encodeURIComponent).join(",")})&select=campaign_number,plain_english_hook`
+  ).catch(() => []);
+  for (const h of hooks) {
+    const r = extra.get(h.campaign_number);
+    if (r && h.plain_english_hook) r.PlainEnglishHook = h.plain_english_hook;
+  }
+  return [...own, ...extra.values()];
 }
 
 /** Get complaints for a specific model, mapped to Complaint interface */
