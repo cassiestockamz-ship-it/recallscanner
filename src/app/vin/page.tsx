@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
-  title: "Free VIN Recall Check · Check Your Vehicle by VIN Number",
+  title: "Free VIN Recall Check: Look Up Any Vehicle",
   description:
     "Enter your 17-digit VIN to instantly check for open safety recalls. Free lookup powered by official NHTSA data. Works for all US vehicles.",
   alternates: { canonical: "https://www.recallscanner.com/vin" },

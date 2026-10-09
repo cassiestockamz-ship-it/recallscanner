@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const make = findMake(slug);
   if (!make) return {};
   return {
-    title: `${make} Recalls · All Safety Recalls for ${make} Vehicles`,
+    title: `${make} Recall Check: Every Recall`,
     description: `Complete list of ${make} safety recalls from NHTSA with severity ratings. Check your VIN, browse every model, and see which campaigns are still open.`,
     alternates: { canonical: `https://www.recallscanner.com/recalls/${slug}` },
   };
