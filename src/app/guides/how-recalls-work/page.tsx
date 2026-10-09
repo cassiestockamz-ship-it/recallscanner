@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import GuideShell from "@/components/GuideShell";
+import SafetyProductRec from "@/components/SafetyProductRec";
 
 export const metadata: Metadata = {
   title: "How Vehicle Recalls Actually Work",
@@ -87,6 +88,7 @@ export default function Page() {
           <Link href="/">home page</Link>{" "}does that in a single step.
         </div>
       </div>
+    <SafetyProductRec />
     </GuideShell>
   );
 }

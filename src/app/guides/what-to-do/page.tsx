@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import GuideShell from "@/components/GuideShell";
+import SafetyProductRec from "@/components/SafetyProductRec";
 
 export const metadata: Metadata = {
   title: "What to Do If Your Car Has an Open Recall",
@@ -165,6 +166,7 @@ export default function Page() {
           Read the campaign text, decide whether it's safe to drive, call any authorized dealer with the campaign number, and ask about a loaner if parts aren't ready. None of this should cost you anything, and none of it should take more than a week to get on the calendar. Start by <Link href="/">running your VIN</Link>.
         </div>
       </div>
+      <SafetyProductRec />
       </GuideShell>
     </>
   );
