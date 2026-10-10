@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const parsed = parseSlug(slug);
   if (!parsed) return {};
   const monthLabel = new Date(parsed.year, parsed.month - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const title = `${monthLabel} Vehicle Recalls: What You Need to Know`;
+  const title = `${monthLabel} Vehicle Recalls by Brand`;
   // Exact row count (Content-Range), falling back to the month's rows (always well under the 1000 cap).
   const count = (await countRecallsForMonth(parsed.month, parsed.year)) ?? (await getRecallsForMonth(parsed.month, parsed.year)).length;
   const indexable = isBlogMonthIndexable(parsed.month, parsed.year, count);

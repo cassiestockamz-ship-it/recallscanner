@@ -37,7 +37,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isThin = recalls.length < 3 && complaints.length < 20;
 
   return {
-    title: `${make} ${modelDisplay} Recalls · Safety Recalls & Complaints`,
+    // Keep "<title> | RecallScanner" within 60 characters where the name allows.
+    title:
+      `${make} ${modelDisplay} Recalls and Complaints`.length <= 45
+        ? `${make} ${modelDisplay} Recalls and Complaints`
+        : `${make} ${modelDisplay} Recalls`,
     description: `All safety recalls, complaint data, and RecallScore severity rating for the ${make} ${modelDisplay}. Check by VIN.`,
     alternates: {
       canonical: `https://www.recallscanner.com/recalls/${makeParam}/${modelParam}`,
