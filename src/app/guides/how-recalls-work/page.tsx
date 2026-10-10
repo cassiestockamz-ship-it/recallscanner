@@ -40,7 +40,7 @@ export default function Page() {
         <li>You bought the car new or used.</li>
         <li>You're the original owner or the fifth.</li>
         <li>The vehicle is in or out of warranty.</li>
-        <li>The car is a year old or fourteen.</li>
+        <li>The car is a year old or ten.</li>
       </ul>
       <p>
         Recalls generally don't expire: an old campaign is still fixed free if nobody ever brought the car in. The main limit is age: under 49 U.S.C. 30120(g) a maker does not have to remedy for free a vehicle first sold more than 15 years before the defect notice (details in <Link href="/guides/your-rights">your rights after a recall</Link>). The only thing that "closes" a recall on a specific vehicle is the dealer physically performing the repair and reporting it back to the manufacturer.
