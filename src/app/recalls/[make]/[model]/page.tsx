@@ -75,6 +75,17 @@ export default async function ModelPage({ params }: Props) {
   // nhtsa_models for some reason, synthesize a display name from the slug.
   const modelDisplay = matchingModel?.model ?? unslug(modelParam).toUpperCase();
 
+  // Scope of the count: the model years the listed campaigns were filed under.
+  const maxYear = new Date().getFullYear() + 1;
+  const modelYears = recalls
+    .map((r) => Number(r.ModelYear))
+    .filter((y) => y >= 1990 && y <= maxYear);
+  const yearSpan = modelYears.length
+    ? Math.min(...modelYears) === Math.max(...modelYears)
+      ? String(Math.min(...modelYears))
+      : `${Math.min(...modelYears)} to ${Math.max(...modelYears)}`
+    : "";
+
   const reliability = await getModelReliability(makeParam, modelParam);
 
   const jsonLd = {
@@ -147,6 +158,7 @@ export default async function ModelPage({ params }: Props) {
           <h2 className="text-[22px] font-bold text-slate-900">All Recalls</h2>
           <span className="text-[12px] text-slate-400">
             {recalls.length} campaign{recalls.length === 1 ? "" : "s"}
+            {yearSpan ? `, model years ${yearSpan}` : ""}
           </span>
         </div>
         <RecallBuckets
