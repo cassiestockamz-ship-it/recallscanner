@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     // Keep "<title> | RecallScanner" within 60 characters where the name allows.
     title:
-      `${make} ${modelDisplay} Recalls and Complaints`.length <= 45
+      `${make} ${modelDisplay} Recalls and Complaints`.length <= 44
         ? `${make} ${modelDisplay} Recalls and Complaints`
         : `${make} ${modelDisplay} Recalls`,
     description: `All safety recalls, complaint data, and RecallScore severity rating for the ${make} ${modelDisplay}. Check by VIN.`,
