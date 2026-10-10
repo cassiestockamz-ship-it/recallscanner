@@ -7,6 +7,7 @@ import VinChecker from "@/components/VinChecker";
 import SafetyVerdict from "@/components/SafetyVerdict";
 import SafetyVerdictSkeleton from "@/components/SafetyVerdictSkeleton";
 import RecallCard from "@/components/RecallCard";
+import EmailCapture from "@/components/EmailCapture";
 import { scoreRecall } from "@/lib/severity";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
@@ -113,6 +114,15 @@ async function VinResultBody({ vin }: { vin: string }) {
   return (
     <>
       <SafetyVerdict recalls={recalls} decoded={decoded} vin={vin} />
+
+      {decoded && decoded.Make && decoded.Model && (
+        <div className="mt-8">
+          <EmailCapture
+            variant="banner"
+            alertFor={{ make: decoded.Make, model: decoded.Model, year: decoded.ModelYear, vin }}
+          />
+        </div>
+      )}
 
       {/* Vehicle details collapsed */}
       {decoded && (

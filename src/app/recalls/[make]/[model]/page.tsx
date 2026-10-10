@@ -14,6 +14,7 @@ import VinChecker from "@/components/VinChecker";
 import RecallBuckets from "@/components/RecallBuckets";
 import ModelSeverityHeader from "@/components/ModelSeverityHeader";
 import ModelEditorial from "@/components/ModelEditorial";
+import EmailCapture from "@/components/EmailCapture";
 
 interface Props {
   params: Promise<{ make: string; model: string }>;
@@ -154,6 +155,11 @@ export default async function ModelPage({ params }: Props) {
           make={make}
           modelDisplay={modelDisplay}
         />
+      </div>
+
+      {/* New-recall alert signup */}
+      <div className="mt-8">
+        <EmailCapture variant="banner" alertFor={{ make, model: modelDisplay }} />
       </div>
 
       {/* Editorial analysis — collapsed, still in DOM for SEO/AdSense */}

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, vehicle } = await request.json();
+    const { email, vehicle, make, model, year, vin } = await request.json();
+    const text = (v: unknown, n: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null);
+    const yearNum = Number.parseInt(String(year ?? ""), 10);
+    const vinText = text(vin, 17);
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
@@ -28,7 +31,11 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         email,
-        vehicle: vehicle || null,
+        vehicle: text(vehicle, 120),
+        make: text(make, 60),
+        model: text(model, 80),
+        year: yearNum >= 1950 && yearNum <= 2100 ? yearNum : null,
+        vin: vinText && /^[A-HJ-NPR-Z0-9]{17}$/i.test(vinText) ? vinText.toUpperCase() : null,
         site_id: "recallscanner",
         subscribed_at: new Date().toISOString(),
       }),

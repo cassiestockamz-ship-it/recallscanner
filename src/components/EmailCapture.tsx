@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 
+interface VehicleAlert {
+  make: string;
+  model: string;
+  year?: number | string | null;
+  vin?: string;
+}
+
 interface Props {
   vehicleName?: string;
   variant?: "inline" | "banner";
+  // When set, the form is a per-vehicle recall alert signup and sends the vehicle with the email.
+  alertFor?: VehicleAlert;
 }
 
-export default function EmailCapture({ vehicleName, variant = "inline" }: Props) {
+export default function EmailCapture({ vehicleName, variant = "inline", alertFor }: Props) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -19,7 +28,11 @@ export default function EmailCapture({ vehicleName, variant = "inline" }: Props)
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, vehicle: vehicleName }),
+        body: JSON.stringify({
+          email,
+          vehicle: alertFor ? [alertFor.year, alertFor.make, alertFor.model].filter(Boolean).join(" ") : vehicleName,
+          ...(alertFor ? { make: alertFor.make, model: alertFor.model, year: alertFor.year, vin: alertFor.vin } : {}),
+        }),
       });
       if (res.ok) {
         setStatus("success");
@@ -30,6 +43,14 @@ export default function EmailCapture({ vehicleName, variant = "inline" }: Props)
     } catch {
       setStatus("error");
     }
+  }
+
+  if (status === "success" && alertFor) {
+    return (
+      <div className="rounded-lg p-4 bg-safe-light">
+        <p className="text-safe font-medium text-sm">You&apos;re on the list for the {alertFor.make} {alertFor.model}. We&apos;ll email you if NHTSA issues a new recall for it.</p>
+      </div>
+    );
   }
 
   if (status === "success") {
@@ -44,11 +65,12 @@ export default function EmailCapture({ vehicleName, variant = "inline" }: Props)
     <div className={`rounded-lg ${variant === "banner" ? "bg-blue-50 border border-blue-100 p-6" : "bg-surface p-4"}`}>
       <div className="mb-2">
         <h3 className="font-semibold text-sm text-slate-800">
-          Email me when vehicle recall alerts open
+          {alertFor ? "Email me if NHTSA issues a new recall for this vehicle" : "Email me when vehicle recall alerts open"}
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">
-          Recall alerts by vehicle are coming. We&apos;ll send one email when they open so you can pick your vehicle, nothing else. No sharing, unsubscribe in one click.
-          For urgent safety concerns, check your VIN directly or contact NHTSA.
+          {alertFor
+            ? `We save your email and this vehicle${alertFor.vin ? ", including its VIN," : ""} only to send this alert. No sharing, unsubscribe in one click. For urgent safety concerns, check your VIN directly or contact NHTSA.`
+            : "Recall alerts by vehicle are coming. We\u2019ll send one email when they open so you can pick your vehicle, nothing else. No sharing, unsubscribe in one click. For urgent safety concerns, check your VIN directly or contact NHTSA."}
         </p>
       </div>
       <form onSubmit={handleSubmit} className="flex gap-2">
