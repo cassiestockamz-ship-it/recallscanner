@@ -148,7 +148,7 @@ export default function Page() {
 
       <h2>Special case: Do-Not-Drive notices</h2>
       <p>
-        Do-Not-Drive recalls are the rarest and most serious category. NHTSA reserves the exact phrase for defects where the <strong>next drive</strong> is the risk: a faulty Takata inflator that could rupture on any deployment, a fuel-pump failure that could stall you on the highway, a steering defect that could detach while cornering.
+        Do-Not-Drive recalls are the rarest and most serious category. Model pages list the most urgent campaigns first, under "Action needed"; the <Link href="/recalls/honda/cr-v">Honda CR-V</Link> and <Link href="/recalls/ford/explorer">Ford Explorer</Link> pages show how campaigns are grouped by urgency. NHTSA reserves the exact phrase for defects where the <strong>next drive</strong> is the risk: a faulty Takata inflator that could rupture on any deployment, a fuel-pump failure that could stall you on the highway, a steering defect that could detach while cornering.
       </p>
       <p>
         If you have one:

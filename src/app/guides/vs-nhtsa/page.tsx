@@ -54,7 +54,7 @@ export default function Page() {
 
       <h3>3. Full model history on one page</h3>
       <p>
-        NHTSA's site shows recall campaigns individually, one at a time. We pre-assemble every campaign in a model's history into a single page with year filtering, severity bucketing, and a search-within-page input. For a vehicle like the Ford F-150, which has dozens of historical campaigns, that's the difference between reading 48 separate pages and scrolling one.
+        NHTSA's site shows recall campaigns individually, one at a time. We pre-assemble every campaign in a model's history into a single page with year filtering, severity bucketing, and a search-within-page input. For a vehicle like the <Link href="/recalls/ford/f-150">Ford F-150</Link>, which has dozens of historical campaigns, that's the difference between reading 48 separate pages and scrolling one.
       </p>
 
       <h3>4. A faster front door</h3>
@@ -68,6 +68,7 @@ export default function Page() {
       </p>
       <ul>
         <li><strong>Quick check on your daily driver.</strong> Use RecallScanner. The verdict card is faster.</li>
+        <li><strong>Comparing models before you buy.</strong> Use RecallScanner. Browse a brand's models from the <Link href="/recalls">recalls by brand</Link> index, or see year-by-year totals on the <Link href="/trends">recall trends</Link> page.</li>
         <li><strong>Buying a used car.</strong> Use both. Start with RecallScanner for the severity read, then double-check the VIN at <a href="https://vinrcl.safercar.gov/vin/" target="_blank" rel="noopener noreferrer">vinrcl.safercar.gov</a> as a sanity test before any money changes hands.</li>
         <li><strong>Filing a complaint about a defect.</strong> Go straight to NHTSA. Complaints filed at <a href="https://www.nhtsa.gov/report-a-safety-problem" target="_blank" rel="noopener noreferrer">nhtsa.gov/report-a-safety-problem</a> become part of the public record and can trigger future investigations.</li>
         <li><strong>Looking for the raw legal text of a campaign.</strong> Our recall cards link directly to the NHTSA campaign page via the NHTSA Campaign Number. Every card has an "NHTSA ↗" link in the corner.</li>

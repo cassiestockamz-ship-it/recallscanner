@@ -73,6 +73,9 @@ export default function Page() {
       <p>
         This is the most important thing to know if you buy a used car. Always check the seller's VIN before handing over money, and insist that any open recalls be resolved before the sale closes. Dealers know this. Private sellers sometimes don't.
       </p>
+      <p>
+        Before you look at a specific car, the model's full campaign history helps you know what to ask about. Start from <Link href="/recalls">recalls by brand</Link>, or go straight to a popular used buy such as the <Link href="/recalls/toyota/rav4">Toyota RAV4</Link>, <Link href="/recalls/honda/cr-v">Honda CR-V</Link> or <Link href="/recalls/jeep/grand-cherokee">Jeep Grand Cherokee</Link>.
+      </p>
 
       <h2>This is not legal advice</h2>
       <p>

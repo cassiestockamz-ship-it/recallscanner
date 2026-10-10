@@ -72,6 +72,9 @@ export default function Page() {
       <p>
         NHTSA itself doesn't rank recalls. Their site shows each campaign equally. That's the gap RecallScanner's <strong>RecallScore</strong> is designed to close: every campaign gets scored on a 0-100 scale derived from the consequence language, the injury and death counts tied to the underlying complaints, and the category of the defect.
       </p>
+      <p>
+        You can see the scoring on any model page. The <Link href="/recalls/chevrolet/silverado-1500">Chevrolet Silverado 1500</Link> and <Link href="/recalls/toyota/rav4">Toyota RAV4</Link> pages, for example, sort every campaign into action needed and lower-risk groups, and the <Link href="/most-recalled">most-recalled models</Link> list shows which vehicles draw the most campaigns.
+      </p>
 
       <h2>How to check if your vehicle is affected</h2>
       <p>
