@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { breadcrumbJsonLd } from "@/lib/breadcrumb";
 
 export const metadata: Metadata = {
-  title: "Vehicle Recall Reports · Monthly Safety Updates",
+  title: "Monthly Vehicle Recall Reports",
   description:
     "Monthly vehicle recall reports summarizing the latest safety recalls, trends, and what you need to know. Powered by NHTSA data.",
   alternates: { canonical: "https://www.recallscanner.com/blog" },
