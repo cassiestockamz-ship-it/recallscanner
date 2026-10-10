@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StickyVinBar from "@/components/StickyVinBar";
+import ClickBeacon from "@/components/ClickBeacon";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <StickyVinBar />
         <main id="main-content" className="flex-1">{children}</main>
         <Footer />
+        <ClickBeacon />
       </body>
     </html>
   );
