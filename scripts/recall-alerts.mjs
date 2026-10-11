@@ -18,7 +18,7 @@
  *   --send          really send (also needs BREVO_API_KEY)
  *   --since YYYY-MM-DD   override the marker (dry run: default is 7 days ago)
  *
- * Env: SUPABASE_URL, SUPABASE_SERVICE_KEY, BREVO_API_KEY (send only),
+ * Env: SUPABASE_URL, SUPABASE_SERVICE_KEY, BREVO_API_KEY, UNSUBSCRIBE_SECRET (send only),
  *      ALERT_FROM_EMAIL (send only), RS_SITE_URL (default https://www.recallscanner.com)
  *
  * Addresses are never printed or logged.
@@ -77,7 +77,7 @@ function yearMatches(modelYear, year) {
 const state = fs.existsSync(STATE) ? JSON.parse(fs.readFileSync(STATE, "utf8")) : null;
 let sinceIso = sinceArg || state?.lastRun;
 if (!sinceIso) {
-  if (SEND) {
+  if (SEND && BREVO) {
     fs.writeFileSync(STATE, JSON.stringify({ lastRun: today, sent: [] }));
     console.log(`First send run: marker set to ${today}, nothing sent.`);
     process.exit(0);
@@ -114,18 +114,44 @@ if (!FROM) {
   process.exit(1);
 }
 
+import crypto from "node:crypto";
+
+const SECRET = process.env.UNSUBSCRIBE_SECRET;
+if (!SECRET) {
+  console.error("UNSUBSCRIBE_SECRET is required to send (signs the unsubscribe link)");
+  process.exit(1);
+}
+const probe = await fetch(`${SITE}/unsubscribe`, { method: "GET", redirect: "manual" }).catch(() => null);
+if (!probe || probe.status !== 200) {
+  console.error(`Refusing to send: ${SITE}/unsubscribe does not return 200 (got ${probe ? probe.status : "no response"}). Build the route first.`);
+  process.exit(1);
+}
+
+// One email per subscriber per run, listing every matched campaign.
+const bySub = new Map();
+for (const m of matches) {
+  if (!bySub.has(m.s.id)) bySub.set(m.s.id, { s: m.s, rs: [] });
+  bySub.get(m.s.id).rs.push(m.r);
+}
+
 let ok = 0;
-for (const { s, r } of matches) {
+for (const { s, rs } of bySub.values()) {
   const vehicle = [s.year, s.make, s.model].filter(Boolean).join(" ");
-  const page = `${SITE}/recalls/${r.make_slug}/${r.model_slug}`;
-  // The unsubscribe route must exist before the first real send (task note in playbooks/email.md).
-  const unsub = `${SITE}/unsubscribe?id=${s.id}`;
+  const page = `${SITE}/recalls/${rs[0].make_slug}/${rs[0].model_slug}`;
+  // Token = HMAC-SHA256(UNSUBSCRIBE_SECRET, String(id)) as hex; the /unsubscribe route must verify the same.
+  const token = crypto.createHmac("sha256", SECRET).update(String(s.id)).digest("hex");
+  const unsub = `${SITE}/unsubscribe?id=${s.id}&t=${token}`;
+  const blocks = rs.map((r) =>
+    [
+      `Campaign number: ${r.campaign_number}${r.model_year ? ` (model year ${r.model_year})` : ""}`,
+      r.summary ? `What NHTSA says: ${r.summary}` : "",
+      r.remedy ? `The fix: ${r.remedy}` : "",
+    ].filter(Boolean).join("\n")
+  );
   const text = [
-    `NHTSA has filed a new recall that covers the ${r.model_year ?? ""} ${r.make} ${r.model}.`.replace("  ", " "),
+    `NHTSA has filed ${rs.length === 1 ? "a new recall" : `${rs.length} new recalls`} that may cover your ${vehicle}.`,
     "",
-    `Campaign number: ${r.campaign_number}`,
-    r.summary ? `\nWhat NHTSA says: ${r.summary}` : "",
-    r.remedy ? `\nThe fix: ${r.remedy}` : "",
+    blocks.join("\n\n"),
     `\nAll recalls for this model: ${page}`,
     `Check a specific VIN: ${SITE}/vin`,
     `\nYou get this because you asked for alerts for your ${vehicle}. Stop them here: ${unsub}`,
@@ -141,11 +167,11 @@ for (const { s, r } of matches) {
     }),
   });
   if (res.ok) {
-    sent.add(`${s.id}:${r.campaign_number}`);
+    for (const r of rs) sent.add(`${s.id}:${r.campaign_number}`);
     ok++;
   } else {
     console.error(`send failed for subscriber ${s.id}: HTTP ${res.status}`);
   }
 }
 fs.writeFileSync(STATE, JSON.stringify({ lastRun: today, sent: [...sent] }));
-console.log(`sent ${ok} of ${matches.length}`);
+console.log(`sent ${ok} of ${bySub.size} subscriber email(s)`);
