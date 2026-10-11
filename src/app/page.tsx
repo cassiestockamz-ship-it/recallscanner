@@ -109,21 +109,21 @@ export default function HomePage() {
             "@context": "https://schema.org",
             "@type": "WebSite",
             name: "RecallScanner",
-            url: "https://recallscanner.com",
+            url: "https://www.recallscanner.com",
             description:
               "Free vehicle recall check by VIN with severity-scored verdicts. Search the official NHTSA database for open safety recalls.",
             potentialAction: {
               "@type": "SearchAction",
               target: {
                 "@type": "EntryPoint",
-                urlTemplate: "https://recallscanner.com/vin/{vin}",
+                urlTemplate: "https://www.recallscanner.com/vin/{vin}",
               },
               "query-input": "required name=vin",
             },
             publisher: {
               "@type": "Organization",
               name: "RecallScanner",
-              url: "https://recallscanner.com/about",
+              url: "https://www.recallscanner.com/about",
             },
           }),
         }}
