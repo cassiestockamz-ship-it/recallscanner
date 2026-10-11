@@ -3,7 +3,7 @@ import { ogTemplate, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og";
 export const runtime = "edge";
 export const contentType = OG_CONTENT_TYPE;
 export const size = OG_SIZE;
-export const alt = "RecallScanner — severity-scored vehicle recall lookups";
+export const alt = "RecallScanner: severity-scored vehicle recall lookups";
 
 export default function Image() {
   return ogTemplate({
