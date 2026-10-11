@@ -165,7 +165,7 @@ for (const { s, rs } of bySub.values()) {
       subject: `New NHTSA recall for your ${vehicle}`,
       textContent: text,
     }),
-  });
+  }).catch((e) => ({ ok: false, status: `network error (${e.message})` }));
   if (res.ok) {
     for (const r of rs) sent.add(`${s.id}:${r.campaign_number}`);
     ok++;
@@ -173,5 +173,12 @@ for (const { s, rs } of bySub.values()) {
     console.error(`send failed for subscriber ${s.id}: HTTP ${res.status}`);
   }
 }
-fs.writeFileSync(STATE, JSON.stringify({ lastRun: today, sent: [...sent] }));
+// If any send failed, keep the old marker so the next run sees those recalls again;
+// the sent pairs saved here stop anyone who already got them from getting them twice.
+const failed = bySub.size - ok;
+fs.writeFileSync(STATE, JSON.stringify({ lastRun: failed ? sinceIso : today, sent: [...sent] }));
 console.log(`sent ${ok} of ${bySub.size} subscriber email(s)`);
+if (failed) {
+  console.error(`${failed} send(s) failed: marker kept at ${sinceIso} so they are retried next run`);
+  process.exit(1);
+}
