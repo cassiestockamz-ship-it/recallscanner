@@ -21,11 +21,28 @@
  * Env: SUPABASE_URL, SUPABASE_SERVICE_KEY, BREVO_API_KEY, UNSUBSCRIBE_SECRET (send only),
  *      ALERT_FROM_EMAIL (send only), RS_SITE_URL (default https://www.recallscanner.com)
  *
+ * UNSUBSCRIBE_SECRET lives in the recallscanner Vercel project. Pull it into the
+ * gitignored sites/recallscanner/.env.local before sending:
+ *   vercel env pull .env.local --environment=production
+ * Values there fill only variables not already set in process.env. Before any
+ * --send the script signs a probe token for fake subscriber 0 and asks the live
+ * GET /api/unsubscribe whether it is valid; anything but {"valid":true} exits 1
+ * and sends nothing.
+ *
  * Addresses are never printed or logged.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
+
+const ENV_LOCAL = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".env.local");
+if (fs.existsSync(ENV_LOCAL)) {
+  for (const line of fs.readFileSync(ENV_LOCAL, "utf8").split("\n")) {
+    const m = line.match(/^([A-Z0-9_]+)="?(.*?)"?$/);
+    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2];
+  }
+}
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -51,6 +68,20 @@ const dayNum = (d) => {
 };
 const isoNum = (iso) => Number(iso.replaceAll("-", ""));
 const today = new Date().toISOString().slice(0, 10);
+
+/** Fail closed: the live site must accept a token signed with this secret (fake subscriber 0, no DB change). */
+async function secretAccepted() {
+  const t = crypto.createHmac("sha256", process.env.UNSUBSCRIBE_SECRET).update("0").digest("hex");
+  const probe = await fetch(`${SITE}/api/unsubscribe?id=0&t=${t}`, { redirect: "manual", cache: "no-store" })
+    .then(async (r) => ({ status: r.status, valid: r.ok ? (await r.json().catch(() => ({}))).valid === true : false }))
+    .catch(() => null);
+  if (probe?.valid) {
+    console.log("Unsubscribe probe: the live site accepts this UNSUBSCRIBE_SECRET.");
+    return true;
+  }
+  console.error(`Refusing to send: ${SITE}/api/unsubscribe does not accept a token signed with this UNSUBSCRIBE_SECRET (${probe ? `HTTP ${probe.status}` : "no response"}). Pull the Vercel value into .env.local.`);
+  return false;
+}
 
 async function rest(table, qs) {
   const rows = [];
@@ -106,6 +137,8 @@ for (const { s, r } of matches) console.log(`subscriber ${s.id}: ${r.campaign_nu
 console.log(`${matches.length} match(es) for ${new Set(matches.map((m) => m.s.id)).size} subscriber(s)`);
 
 if (!(SEND && BREVO)) {
+  if (process.env.UNSUBSCRIBE_SECRET) await secretAccepted();
+  else console.log("UNSUBSCRIBE_SECRET not set: a send run would refuse.");
   if (SEND && !BREVO) console.log("--send given but BREVO_API_KEY is not set: nothing sent.");
   process.exit(0);
 }
@@ -114,18 +147,12 @@ if (!FROM) {
   process.exit(1);
 }
 
-import crypto from "node:crypto";
-
 const SECRET = process.env.UNSUBSCRIBE_SECRET;
 if (!SECRET) {
   console.error("UNSUBSCRIBE_SECRET is required to send (signs the unsubscribe link)");
   process.exit(1);
 }
-const probe = await fetch(`${SITE}/unsubscribe`, { method: "GET", redirect: "manual" }).catch(() => null);
-if (!probe || probe.status !== 200) {
-  console.error(`Refusing to send: ${SITE}/unsubscribe does not return 200 (got ${probe ? probe.status : "no response"}). Build the route first.`);
-  process.exit(1);
-}
+if (!(await secretAccepted())) process.exit(1);
 
 // One email per subscriber per run, listing every matched campaign.
 const bySub = new Map();

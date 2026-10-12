@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validUnsubscribeToken } from "@/lib/unsubscribe";
 
-// POST only: the confirm button on /unsubscribe, or a mail client's one-click
+// GET is verify-only: { valid } for ?id=&t=, never touches the database. scripts/recall-alerts.mjs
+// probes it with a fake subscriber id before any send, so mail never goes out with a secret the site cannot check.
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const valid = validUnsubscribeToken(url.searchParams.get("id") ?? undefined, url.searchParams.get("t") ?? undefined);
+  return NextResponse.json({ valid }, { headers: { "Cache-Control": "no-store" } });
+}
+
+// Changes happen on POST only: the confirm button on /unsubscribe, or a mail client's one-click
 // List-Unsubscribe-Post (id and t in the query string). A GET never changes anything,
 // so link scanners that open every URL in an email cannot unsubscribe anyone.
 export async function POST(request: NextRequest) {
